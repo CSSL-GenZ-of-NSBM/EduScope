@@ -1,0 +1,60 @@
+services:
+  # Next.js Application
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://mongodb:27017/eduscope
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=your-super-secret-key-here
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - mongodb
+    networks:
+      - eduscope-network
+
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: eduscope-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=eduscope
+    volumes:
+      - mongodb_data:/data/db
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - eduscope-network
+
+  # MongoDB Express (Database Admin Interface)
+  mongo-express:
+    image: mongo-express:1.0.2
+    container_name: eduscope-mongo-express
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=admin123
+    depends_on:
+      - mongodb
+    networks:
+      - eduscope-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  eduscope-network:
+    driver: bridge
