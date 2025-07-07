@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/config"
 import connectDB from "@/lib/db/mongodb"
 import ResearchPaper from "@/lib/db/models/ResearchPaper"
+import UserActivity, { ActivityType } from "@/lib/db/models/UserActivity"
+import { Types } from "mongoose"
 
 interface Params {
   id: string
@@ -43,6 +45,52 @@ export async function GET(
         { success: false, error: "Research paper not found" },
         { status: 404 }
       )
+    }
+
+    // Track view if user is authenticated and specifically requests view tracking
+    // Don't track view if this is a download request
+    const shouldTrackView = request.nextUrl.searchParams.get('trackView') === 'true'
+    const isDownloadRequest = request.nextUrl.searchParams.get('download') === 'true'
+    
+    if (session?.user?.id && shouldTrackView && !isDownloadRequest) {
+      const userId = new Types.ObjectId(session.user.id)
+      
+      try {
+        // Use atomic operation to prevent race conditions
+        const updateResult = await ResearchPaper.findOneAndUpdate(
+          { 
+            _id: id,
+            viewedBy: { $ne: userId } // Only update if user hasn't viewed yet
+          },
+          {
+            $addToSet: { viewedBy: userId },
+            $inc: { viewCount: 1 }
+          },
+          { new: true }
+        )
+        
+        // Only create activity if the update actually happened (user wasn't already in viewedBy)
+        if (updateResult) {
+          await UserActivity.create({
+            userId: userId,
+            activityType: ActivityType.VIEW,
+            targetId: paper._id,
+            targetTitle: paper.title,
+            metadata: {
+              paperField: paper.field,
+              paperYear: paper.year,
+              fileName: paper.fileName
+            }
+          })
+          
+          // Update the paper object for response
+          paper.viewCount = updateResult.viewCount
+          paper.viewedBy = updateResult.viewedBy
+        }
+      } catch (error) {
+        console.error('Error tracking view:', error)
+        // Don't fail the whole request if view tracking fails
+      }
     }
 
     return NextResponse.json({
@@ -156,17 +204,56 @@ export async function PATCH(
 
     // Handle download count increment
     if (action === 'download') {
-      const updatedPaper = await ResearchPaper.findByIdAndUpdate(
-        id,
-        { $inc: { downloadCount: 1 } },
-        { new: true }
-      )
+      const userId = new Types.ObjectId(session.user.id)
+      
+      try {
+        // Use atomic operation to prevent race conditions
+        const updateResult = await ResearchPaper.findOneAndUpdate(
+          { 
+            _id: id,
+            downloadedBy: { $ne: userId } // Only update if user hasn't downloaded yet
+          },
+          { 
+            $addToSet: { downloadedBy: userId },
+            $inc: { downloadCount: 1 } 
+          },
+          { new: true }
+        )
 
-      return NextResponse.json({
-        success: true,
-        data: updatedPaper,
-        message: "Download count updated successfully"
-      })
+        // Only create activity if the update actually happened (user wasn't already in downloadedBy)
+        if (updateResult) {
+          await UserActivity.create({
+            userId: userId,
+            activityType: ActivityType.DOWNLOAD,
+            targetId: paper._id,
+            targetTitle: paper.title,
+            metadata: {
+              paperField: paper.field,
+              paperYear: paper.year,
+              fileName: paper.fileName
+            }
+          })
+
+          return NextResponse.json({
+            success: true,
+            data: updateResult,
+            message: "Download count updated successfully"
+          })
+        } else {
+          // User has already downloaded, don't increment count but still return success
+          return NextResponse.json({
+            success: true,
+            data: paper,
+            message: "Paper already downloaded by user"
+          })
+        }
+      } catch (error) {
+        console.error('Error tracking download:', error)
+        return NextResponse.json(
+          { success: false, error: "Failed to update download count" },
+          { status: 500 }
+        )
+      }
     }
 
     return NextResponse.json(
@@ -217,6 +304,20 @@ export async function DELETE(
         { status: 403 }
       )
     }
+
+    // Create deletion activity record before deleting
+    const userId = new Types.ObjectId(session.user.id)
+    await UserActivity.create({
+      userId: userId,
+      activityType: ActivityType.DELETE,
+      targetId: paper._id,
+      targetTitle: paper.title,
+      metadata: {
+        paperField: paper.field,
+        paperYear: paper.year,
+        fileName: paper.fileName
+      }
+    })
 
     await ResearchPaper.findByIdAndDelete(id)
 

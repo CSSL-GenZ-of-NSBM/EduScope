@@ -68,6 +68,18 @@ const ResearchPaperSchema = new Schema<ResearchPaperDocument>({
     type: Number,
     default: 0
   },
+  viewCount: {
+    type: Number,
+    default: 0
+  },
+  viewedBy: [{
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  downloadedBy: [{
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   status: {
     type: String,
     enum: Object.values(ContentStatus),

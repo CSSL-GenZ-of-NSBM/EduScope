@@ -88,6 +88,9 @@ export interface ResearchPaper extends BaseDocument {
   uploadedBy: string; // User ID
   tags: string[];
   downloadCount: number;
+  viewCount: number;
+  viewedBy: string[]; // Array of User IDs who viewed this paper
+  downloadedBy: string[]; // Array of User IDs who downloaded this paper
   status: ContentStatus;
   keywords?: string[];
   supervisor?: string;
@@ -109,6 +112,9 @@ export interface ResearchPaperSchema extends BaseSchema {
   uploadedBy: any; // Will be ObjectId in schema, string in populated response
   tags: string[];
   downloadCount: number;
+  viewCount: number;
+  viewedBy: any[]; // Array of ObjectIds in schema, strings in response
+  downloadedBy: any[]; // Array of ObjectIds in schema, strings in response
   status: ContentStatus;
   keywords?: string[];
   supervisor?: string;

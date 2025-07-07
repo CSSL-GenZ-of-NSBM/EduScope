@@ -160,8 +160,8 @@ export default function ResearchPage() {
 
   const handleDownload = async (paperId: string, filename: string) => {
     try {
-      // Get the paper details to get the file ID
-      const response = await fetch(`/api/research/${paperId}`)
+      // Get the paper details to get the file ID (without tracking view)
+      const response = await fetch(`/api/research/${paperId}?download=true`)
       const data = await response.json()
       
       if (!data.success) {

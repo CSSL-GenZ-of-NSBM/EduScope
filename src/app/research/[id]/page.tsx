@@ -33,6 +33,7 @@ export default function ResearchDetailPage() {
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasTrackedView, setHasTrackedView] = useState(false);
 
   const paperId = params.id as string;
 
@@ -41,6 +42,30 @@ export default function ResearchDetailPage() {
       fetchPaper();
     }
   }, [paperId]);
+
+  // Track view when user spends time on the page
+  useEffect(() => {
+    if (!paper || !session?.user || hasTrackedView) return;
+
+    const trackView = async () => {
+      if (hasTrackedView) return; // Double check to prevent race conditions
+      
+      try {
+        setHasTrackedView(true); // Set immediately to prevent multiple calls
+        await fetch(`/api/research/${paperId}?trackView=true`);
+      } catch (error) {
+        console.error('Failed to track view:', error);
+        setHasTrackedView(false); // Reset on error so it can retry
+      }
+    };
+
+    // Track view after 2 seconds of being on the page
+    const viewTimer = setTimeout(trackView, 2000);
+
+    return () => {
+      clearTimeout(viewTimer);
+    };
+  }, [paper, session, paperId, hasTrackedView]);
 
   const fetchPaper = async () => {
     try {

@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth/config"
 import connectDB from "@/lib/db/mongodb"
 import ResearchPaper from "@/lib/db/models/ResearchPaper"
+import UserActivity, { ActivityType } from "@/lib/db/models/UserActivity"
+import { Types } from "mongoose"
 import { z } from "zod"
 
 const searchSchema = z.object({
@@ -174,6 +176,9 @@ export async function POST(request: NextRequest) {
       ...body,
       uploadedBy: session.user.id,
       downloadCount: 0,
+      viewCount: 0,
+      viewedBy: [],
+      downloadedBy: [],
       status: 'approved', // Auto-approve for now, can be changed to 'pending' later
       fileName: fileInfo.filename,
       fileSize: fileInfo.length,
@@ -183,6 +188,20 @@ export async function POST(request: NextRequest) {
     await connectDB()
     
     const paper = await ResearchPaper.create(paperData)
+    
+    // Create upload activity record
+    const userId = new Types.ObjectId(session.user.id)
+    await UserActivity.create({
+      userId: userId,
+      activityType: ActivityType.UPLOAD,
+      targetId: paper._id,
+      targetTitle: paper.title,
+      metadata: {
+        paperField: paper.field,
+        paperYear: paper.year,
+        fileName: paper.fileName
+      }
+    })
     
     // Populate the created paper
     await paper.populate('uploadedBy', 'name studentId faculty')

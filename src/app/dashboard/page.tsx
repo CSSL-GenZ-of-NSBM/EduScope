@@ -19,7 +19,10 @@ import {
   TrendingUp,
   FileText,
   Plus,
-  RefreshCw
+  RefreshCw,
+  Download,
+  Eye,
+  Trash2
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -30,13 +33,16 @@ export default function DashboardPage() {
     downloads: 0,
     ideas: 0
   })
+  const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [activityLoading, setActivityLoading] = useState(true)
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/auth/signin")
     } else if (status === "authenticated" && session?.user?.id) {
       fetchStats()
+      fetchRecentActivity()
     }
   }, [status, session, router])
 
@@ -55,6 +61,22 @@ export default function DashboardPage() {
       console.error('Failed to fetch stats:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchRecentActivity = async () => {
+    try {
+      setActivityLoading(true)
+      const response = await fetch('/api/user/activity')
+      const data = await response.json()
+      
+      if (data.success) {
+        setRecentActivity(data.data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch recent activity:', error)
+    } finally {
+      setActivityLoading(false)
     }
   }
 
@@ -230,17 +252,91 @@ export default function DashboardPage() {
         {/* Recent Activity */}
         <Card>
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>
-              Your latest interactions on EduScope
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Recent Activity</CardTitle>
+                <CardDescription>
+                  Your latest interactions on EduScope
+                </CardDescription>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={fetchRecentActivity}
+                disabled={activityLoading}
+              >
+                <RefreshCw className={`h-4 w-4 ${activityLoading ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-gray-500">
-              <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No recent activity yet.</p>
-              <p className="text-sm">Start by uploading your first research paper or exploring the idea bank!</p>
-            </div>
+            {activityLoading ? (
+              <div className="text-center py-8">
+                <RefreshCw className="h-6 w-6 mx-auto mb-2 animate-spin text-gray-400" />
+                <p className="text-gray-500">Loading activity...</p>
+              </div>
+            ) : recentActivity.length > 0 ? (
+              <div className="space-y-4">
+                {recentActivity.map((activity) => (
+                  <div key={activity._id} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
+                    <div className={`p-2 rounded-full ${
+                      activity.type === 'upload' ? 'bg-green-100' :
+                      activity.type === 'download' ? 'bg-blue-100' :
+                      activity.type === 'view' ? 'bg-purple-100' :
+                      activity.type === 'delete' ? 'bg-red-100' :
+                      'bg-gray-100'
+                    }`}>
+                      {activity.type === 'upload' ? (
+                        <Upload className="h-4 w-4 text-green-600" />
+                      ) : activity.type === 'download' ? (
+                        <Download className="h-4 w-4 text-blue-600" />
+                      ) : activity.type === 'view' ? (
+                        <Eye className="h-4 w-4 text-purple-600" />
+                      ) : activity.type === 'delete' ? (
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      ) : (
+                        <FileText className="h-4 w-4 text-gray-600" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">
+                        {activity.type === 'upload' ? 
+                          `You uploaded: ${activity.title}` :
+                         activity.type === 'download' ? 
+                          `You downloaded: ${activity.title}` :
+                         activity.type === 'view' ?
+                          `You viewed: ${activity.title}` :
+                         activity.type === 'delete' ?
+                          `You deleted: ${activity.title}` :
+                          activity.title
+                        }
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(activity.date).toLocaleDateString()} at {new Date(activity.date).toLocaleTimeString()}
+                        {activity.metadata?.paperField && (
+                          <span className="ml-2 px-1 py-0.5 bg-gray-200 rounded text-xs">
+                            {activity.metadata.paperField}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    {activity.paperId && activity.type !== 'delete' && (
+                      <Link href={`/research/${activity.paperId}`}>
+                        <Button variant="outline" size="sm">
+                          View
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No recent activity yet.</p>
+                <p className="text-sm">Start by uploading your first research paper or exploring the idea bank!</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
