@@ -14,7 +14,8 @@ import {
   LayoutDashboard,
   LogOut,
   User,
-  Shield
+  Shield,
+  Bookmark
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -109,8 +110,21 @@ export default function Navbar() {
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/research/my-papers" className="flex items-center">
+                        <BookOpen className="mr-2 h-4 w-4" />
+                        <span>My Research</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/research/saved-papers" className="flex items-center">
+                        <Bookmark className="mr-2 h-4 w-4" />
+                        <span>Saved Papers</span>
+                      </Link>
+                    </DropdownMenuItem>
                     {(session.user?.role === 'admin' || session.user?.role === 'moderator') && (
                       <>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
                           <Link href="/admin" className="flex items-center">
                             <Shield className="mr-2 h-4 w-4" />

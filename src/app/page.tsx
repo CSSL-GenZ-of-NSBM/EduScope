@@ -51,7 +51,7 @@ export default function HomePage() {
               Welcome to EduScope
             </h1>
             <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
-              NSBM Green University's comprehensive academic platform for research collaboration, 
+              NSBM Green University's comprehensive research platform for research collaboration, 
               project sharing, and academic guidance.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

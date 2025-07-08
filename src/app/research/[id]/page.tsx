@@ -7,6 +7,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { DocumentPreview } from "@/components/ui/document-preview";
+import { useToast } from "@/components/ui/toast";
 import { 
   ArrowLeft, 
   Download, 
@@ -19,8 +21,10 @@ import {
   GraduationCap,
   FileText,
   Share2,
-  Heart,
-  Flag
+  Bookmark,
+  BookmarkCheck,
+  Copy,
+  Check
 } from "lucide-react";
 import { ResearchPaper } from "@/types";
 import { formatFileSize } from "@/lib/file-upload/validation";
@@ -29,11 +33,15 @@ export default function ResearchDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { data: session } = useSession();
+  const { addToast } = useToast();
   const [paper, setPaper] = useState<ResearchPaper | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasTrackedView, setHasTrackedView] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const paperId = params.id as string;
 
@@ -83,6 +91,11 @@ export default function ResearchDetailPage() {
 
       const data = await response.json();
       setPaper(data.data);
+      
+      // Check if current user has saved this paper
+      if (session?.user && data.data.savedBy) {
+        setIsSaved(data.data.savedBy.includes(session.user.id));
+      }
     } catch (error) {
       console.error("Error fetching research paper:", error);
       setError("Failed to load research paper");
@@ -123,11 +136,93 @@ export default function ResearchDetailPage() {
 
       // Update local state
       setPaper(prev => prev ? { ...prev, downloadCount: prev.downloadCount + 1 } : null);
+      
+      addToast({
+        title: "Download Started",
+        description: "Your file download has begun.",
+        variant: "success"
+      });
     } catch (error) {
       console.error("Download error:", error);
-      alert("Failed to download file. Please try again.");
+      addToast({
+        title: "Download Failed",
+        description: "Failed to download file. Please try again.",
+        variant: "error"
+      });
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!paper || !session?.user) return;
+
+    try {
+      setSaving(true);
+      const response = await fetch(`/api/research/${paperId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: isSaved ? 'unsave' : 'save' }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save paper");
+      }
+
+      const data = await response.json();
+      
+      // Update local state
+      setIsSaved(!isSaved);
+      setPaper(prev => prev ? { 
+        ...prev, 
+        saveCount: data.data.saveCount,
+        savedBy: data.data.savedBy 
+      } : null);
+
+      addToast({
+        title: isSaved ? "Removed from Saves" : "Saved Successfully",
+        description: isSaved 
+          ? "Paper removed from your saved collection." 
+          : "Paper added to your saved collection.",
+        variant: "success"
+      });
+    } catch (error) {
+      console.error("Save error:", error);
+      addToast({
+        title: "Action Failed",
+        description: "Failed to save paper. Please try again.",
+        variant: "error"
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      const url = `${window.location.origin}/research/${paperId}`;
+      await navigator.clipboard.writeText(url);
+      
+      setLinkCopied(true);
+      addToast({
+        title: "Link Copied",
+        description: "Paper link has been copied to clipboard.",
+        variant: "success"
+      });
+      
+      // Reset the copied state after 2 seconds
+      setTimeout(() => {
+        setLinkCopied(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Share error:", error);
+      addToast({
+        title: "Share Failed",
+        description: "Failed to copy link. Please try again.",
+        variant: "error"
+      });
     }
   };
 
@@ -247,6 +342,17 @@ export default function ResearchDetailPage() {
                     </div>
                   )}
 
+                  {/* Document Preview */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3">Document Preview</h3>
+                    <DocumentPreview
+                      fileId={paper.fileId}
+                      fileName={paper.fileName}
+                      mimeType={paper.mimeType}
+                      fileSize={paper.fileSize}
+                    />
+                  </div>
+
                   {/* Additional Information */}
                   <div className="grid md:grid-cols-2 gap-4">
                     {paper.supervisor && (
@@ -320,7 +426,7 @@ export default function ResearchDetailPage() {
                       <Eye className="h-4 w-4 text-blue-600" />
                       <span className="text-sm">Views</span>
                     </div>
-                    <span className="font-medium">-</span>
+                    <span className="font-medium">{paper.viewCount || 0}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -331,10 +437,10 @@ export default function ResearchDetailPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Heart className="h-4 w-4 text-red-600" />
-                      <span className="text-sm">Likes</span>
+                      <Bookmark className="h-4 w-4 text-purple-600" />
+                      <span className="text-sm">Saves</span>
                     </div>
-                    <span className="font-medium">-</span>
+                    <span className="font-medium">{paper.saveCount || 0}</span>
                   </div>
                 </div>
               </CardContent>
@@ -347,18 +453,41 @@ export default function ResearchDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <Button variant="outline" size="sm" className="w-full justify-start">
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share Paper
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full justify-start"
+                    onClick={handleShare}
+                  >
+                    {linkCopied ? (
+                      <Check className="h-4 w-4 mr-2 text-green-600" />
+                    ) : (
+                      <Share2 className="h-4 w-4 mr-2" />
+                    )}
+                    {linkCopied ? "Link Copied!" : "Share Paper"}
                   </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start">
-                    <Heart className="h-4 w-4 mr-2" />
-                    Add to Favorites
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start text-red-600 hover:text-red-700">
-                    <Flag className="h-4 w-4 mr-2" />
-                    Report Content
-                  </Button>
+                  
+                  {session?.user && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full justify-start"
+                      onClick={handleSave}
+                      disabled={saving}
+                    >
+                      {isSaved ? (
+                        <BookmarkCheck className="h-4 w-4 mr-2 text-blue-600" />
+                      ) : (
+                        <Bookmark className="h-4 w-4 mr-2" />
+                      )}
+                      {saving 
+                        ? "Processing..." 
+                        : isSaved 
+                          ? "Saved" 
+                          : "Save Paper"
+                      }
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
