@@ -95,6 +95,26 @@ export interface ResearchPaper extends BaseDocument {
   keywords?: string[];
   supervisor?: string;
   department?: string;
+  pendingChanges?: {
+    title?: string;
+    authors?: string[];
+    abstract?: string;
+    field?: AcademicField;
+    faculty?: Faculty;
+    year?: number;
+    keywords?: string[];
+    tags?: string[];
+    supervisor?: string;
+    department?: string;
+    requestedAt?: Date;
+    requestedBy?: string;
+    status?: 'pending' | 'approved' | 'rejected';
+  };
+  pendingDeletion?: {
+    requestedAt?: Date;
+    requestedBy?: string;
+    status?: 'pending' | 'approved' | 'rejected';
+  };
 }
 
 // Research Paper schema interface for Mongoose (without _id)
@@ -119,6 +139,26 @@ export interface ResearchPaperSchema extends BaseSchema {
   keywords?: string[];
   supervisor?: string;
   department?: string;
+  pendingChanges?: {
+    title?: string;
+    authors?: string[];
+    abstract?: string;
+    field?: AcademicField;
+    faculty?: Faculty;
+    year?: number;
+    keywords?: string[];
+    tags?: string[];
+    supervisor?: string;
+    department?: string;
+    requestedAt?: Date;
+    requestedBy?: any;
+    status?: 'pending' | 'approved' | 'rejected';
+  };
+  pendingDeletion?: {
+    requestedAt?: Date;
+    requestedBy?: any;
+    status?: 'pending' | 'approved' | 'rejected';
+  };
 }
 
 // Project interface

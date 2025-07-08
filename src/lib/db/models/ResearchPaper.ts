@@ -1,8 +1,30 @@
 import mongoose, { Schema, Document, Types } from 'mongoose'
 import { type ResearchPaperSchema, AcademicField, Faculty, ContentStatus } from '@/types'
 
-interface ResearchPaperDocument extends Omit<ResearchPaperSchema, 'uploadedBy'>, Document {
+interface ResearchPaperDocument extends Omit<ResearchPaperSchema, 'uploadedBy' | 'viewedBy' | 'downloadedBy' | 'pendingChanges' | 'pendingDeletion'>, Document {
   uploadedBy: Types.ObjectId;
+  viewedBy: Types.ObjectId[];
+  downloadedBy: Types.ObjectId[];
+  pendingChanges?: {
+    title?: string;
+    authors?: string[];
+    abstract?: string;
+    field?: string;
+    faculty?: string;
+    year?: number;
+    keywords?: string[];
+    tags?: string[];
+    supervisor?: string;
+    department?: string;
+    requestedAt?: Date;
+    requestedBy?: Types.ObjectId;
+    status?: 'pending' | 'approved' | 'rejected';
+  };
+  pendingDeletion?: {
+    requestedAt?: Date;
+    requestedBy?: Types.ObjectId;
+    status?: 'pending' | 'approved' | 'rejected';
+  };
 }
 
 const ResearchPaperSchema = new Schema<ResearchPaperDocument>({
@@ -97,6 +119,40 @@ const ResearchPaperSchema = new Schema<ResearchPaperDocument>({
   department: {
     type: String,
     trim: true
+  },
+  pendingChanges: {
+    title: String,
+    authors: [String],
+    abstract: String,
+    field: String,
+    faculty: String,
+    year: Number,
+    keywords: [String],
+    tags: [String],
+    supervisor: String,
+    department: String,
+    requestedAt: Date,
+    requestedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending'
+    }
+  },
+  pendingDeletion: {
+    requestedAt: Date,
+    requestedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending'
+    }
   }
 }, {
   timestamps: true

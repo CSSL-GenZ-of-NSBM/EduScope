@@ -16,6 +16,7 @@ const searchSchema = z.object({
   year: z.string().optional(),
   sortBy: z.enum(["createdAt", "downloadCount", "title", "year"]).optional().default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
+  userOnly: z.string().optional()
 })
 
 export async function GET(request: NextRequest) {
@@ -31,7 +32,8 @@ export async function GET(request: NextRequest) {
       faculty,
       year,
       sortBy,
-      sortOrder
+      sortOrder,
+      userOnly
     } = searchSchema.parse(params)
 
     const pageNum = parseInt(page)
@@ -42,11 +44,25 @@ export async function GET(request: NextRequest) {
 
     // Build query - show approved papers and user's own papers
     const session = await getServerSession(authOptions)
-    const query: any = {
-      $or: [
-        { status: 'approved' },
-        ...(session?.user?.id ? [{ uploadedBy: session.user.id }] : [])
-      ]
+    let query: any = {}
+    
+    if (userOnly === 'true') {
+      // Show only user's own papers (all statuses)
+      if (!session?.user?.id) {
+        return NextResponse.json(
+          { success: false, error: "Authentication required" },
+          { status: 401 }
+        )
+      }
+      query.uploadedBy = session.user.id
+    } else {
+      // Show approved papers and user's own papers
+      query = {
+        $or: [
+          { status: 'approved' },
+          ...(session?.user?.id ? [{ uploadedBy: session.user.id }] : [])
+        ]
+      }
     }
     
     if (search) {
