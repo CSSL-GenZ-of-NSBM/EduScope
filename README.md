@@ -1,279 +1,281 @@
-# EduScope - NSBM Green University Academic Platform
+# EduScope - NSBM Green University Research Platform
 
-EduScope is a comprehensive academic platform designed specifically for NSBM Green University students to foster research collaboration and academic guidance.
+🎓 **A collaborative research platform where NSBM students can share research papers, project ideas, and get academic guidance.**
 
-## 🎯 Purpose
+> **New to coding?** Don't worry! This guide will walk you through everything step-by-step. No prior experience required! 🚀
 
-EduScope serves as a centralized hub where students can:
+## 🎯 What is EduScope?
 
-### Research & Project Sharing
-- 📄 **Upload Research Papers & Projects** - Share completed research papers, final year projects, and academic work
-- 🔍 **Explore Academic Content** - Browse and discover research papers from fellow students across different fields
-- 🤝 **Collaborate & Share** - Build a community-driven knowledge base for academic excellence
+EduScope is like a "Facebook for student research" where NSBM students can:
+- **📄 Research Paper Sharing** - Upload and discover academic papers from fellow students
+- **💡 Idea Bank** - Share and explore research topic ideas  
+- **🧭 Degree Guidance** - Get recommendations for choosing your degree program
+- **🤝 Academic Collaboration** - Build a community-driven knowledge base
+- **⭐ Save & Favorite** - Save interesting papers to read later
 
-### Idea Bank
-- 💡 **Research Ideas Repository** - Upload and explore innovative research paper topics and project ideas
-- 🏷️ **Categorized by Fields** - Organized content across various academic disciplines
-- 🌟 **Inspiration Hub** - Help students find inspiration for their next research endeavor
+## 🛠️ Technology Stack (Don't worry, you don't need to know all of this!)
 
-### Degree Guidance
-- 🧭 **Degree Path Recommendation** - Assist new incoming students in choosing the most suitable undergraduate degree
-- 📊 **Academic Input Analysis** - Personalized recommendations based on student preferences and academic background
-- 🎓 **University Onboarding** - Streamline the decision-making process for prospective NSBM students
+- **Frontend**: Next.js 14 with TypeScript (JavaScript with type safety)
+- **Database**: MongoDB (stores all our data)
+- **Styling**: Tailwind CSS + shadcn/ui components (makes things look pretty)
+- **Authentication**: NextAuth.js (handles user login/logout)
+- **Containerization**: Docker (runs everything in isolated containers)
 
-## 🛠️ Technology Stack
+*Don't be intimidated by these technologies! The setup is automated and you can learn as you go.*
 
-- **Frontend**: Next.js 14 with TypeScript
-- **Backend**: RESTful API with Next.js API Routes
-- **Database**: MongoDB with Mongoose ODM
-- **Authentication**: NextAuth.js
-- **UI Components**: shadcn/ui with Tailwind CSS
-- **Containerization**: Docker & Docker Compose
-- **File Storage**: GridFS (MongoDB)
+## 📋 What You Need Before Starting
 
-## 🚀 Quick Start
+> **Complete beginner?** No problem! Just follow these links to download everything you need:
 
-### Prerequisites
-- Docker Desktop installed and running
-- Git installed
-- At least 4GB RAM available
+1. **Git** - [Download here](https://git-scm.com/downloads) 
+   - *This helps you save and share your code changes*
+2. **Docker Desktop** - [Download here](https://www.docker.com/products/docker-desktop/)
+   - *This runs the application on your computer*
+3. **Code Editor** - [VS Code recommended](https://code.visualstudio.com/)
+   - *This is where you'll write code (like Microsoft Word but for coding)*
 
-### Option 1: Using Docker Compose (Recommended)
+**Windows Users**: Use PowerShell or Command Prompt for terminal commands  
+**Mac/Linux Users**: Use Terminal for commands
+
+## 🚀 How to Start Contributing (Step by Step)
+
+### Step 1: Get the Code
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd EduScope
+# 1. Open your terminal/command prompt
+# 2. Navigate to where you want the project (e.g., Desktop)
+cd Desktop
 
-# Copy environment variables
+# 3. Clone the project
+git clone https://github.com/CSSL-GenZ-of-NSBM/EduScope.git
+
+# 4. Go into the project folder
+cd EduScope
+```
+
+### Step 2: Set Up Environment
+```bash
+# 1. Copy the environment file (this contains important settings)
 copy .env.example .env.local
 
-# Start the entire application stack
+# 2. Make sure Docker Desktop is running 
+# Look for the Docker whale icon in your system tray (bottom right on Windows)
+# If you don't see it, open Docker Desktop application
+
+# 3. Start the application (this may take 5-10 minutes the first time)
 docker compose up
+
+# You'll see lots of text scrolling - this is normal! 
+# Wait until you see "ready" or "compiled successfully"
 ```
 
-### Option 2: Using Windows Batch Script
-```cmd
-# Navigate to the project directory
+> **First time setup taking long?** This is normal! Docker is downloading everything needed to run the app.
+
+### Step 3: Set Up Initial Users
+```bash
+# 1. Open a new terminal window (keep the previous one running)
+# 2. Navigate to the project folder again
+cd Desktop/EduScope
+
+# 3. Run the user setup script
+node scripts/setup-users.js
+```
+
+### Step 4: Access the Application
+- **Main App**: http://localhost:3000
+- **Database Admin**: http://localhost:8081 (username: admin, password: admin123)
+
+### Step 5: Test Login
+Use one of these test accounts:
+- **Admin**: admin@students.nsbm.ac.lk / password123
+- **Student**: student@students.nsbm.ac.lk / password123
+
+## 🌟 How to Contribute (For Beginners)
+
+### 1. Create Your Feature Branch
+```bash
+# 1. Make sure you're in the project folder
 cd EduScope
 
-# Run the startup script
-scripts\start.bat
+# 2. Create and switch to a new branch (replace 'feature-name' with what you're building)
+git checkout -b feature-add-search-functionality
+
+# Examples of good branch names:
+# - feature-add-dark-mode
+# - fix-login-bug
+# - improve-ui-design
 ```
 
-### Option 3: Manual Setup
+### 2. Make Your Changes
+- Edit files in VS Code or your preferred editor
+- Test your changes by refreshing http://localhost:3000
+- Make sure everything works before committing
+
+### 3. Save Your Work
 ```bash
-# Install dependencies
-npm install
+# 1. See what files you changed
+git status
 
-# Set up environment variables
-copy .env.example .env.local
+# 2. Add your changes
+git add .
 
-# Start MongoDB (make sure Docker is running)
-docker run -d -p 27017:27017 --name eduscope-mongo mongo:7.0
+# 3. Save with a clear message
+git commit -m "Add search functionality to research papers"
 
-# Start development server
-npm run dev
+# Examples of good commit messages:
+# - "Fix login button not working on mobile"
+# - "Add dark mode toggle to navigation"
+# - "Improve research paper card design"
 ```
 
-## 🌐 Access Points
+### 4. Share Your Work
+```bash
+# 1. Push your branch to GitHub
+git push origin feature-add-search-functionality
 
-After running `docker compose up`, you can access:
-
-- **🏠 Main Application**: http://localhost:3000
-- **📊 MongoDB Express**: http://localhost:8081 (admin/admin123)
-- **📚 MongoDB**: mongodb://localhost:27017/eduscope
-- **🔧 API Health Check**: http://localhost:3000/api/health
-
-## ✅ Platform Status
-
-**🎉 SUCCESSFULLY DEPLOYED!** The EduScope platform is now fully functional and running with Docker.
-
-### ✅ Currently Working:
-- ✅ **Docker Containerization**: All services running in containers
-- ✅ **Next.js 14 with TypeScript**: Modern React framework with type safety
-- ✅ **MongoDB Integration**: Database connected and accessible
-- ✅ **API Routes**: Health check and database test endpoints
-- ✅ **shadcn/ui Components**: Modern UI component library integrated
-- ✅ **Tailwind CSS**: Utility-first CSS framework
-- ✅ **Windows PowerShell Scripts**: Easy startup/shutdown scripts
-- ✅ **MongoDB Express**: Database administration interface
-
-### 🚧 Ready for Development:
-- 🔄 **Authentication System** (NextAuth.js configured)
-- 🔄 **File Upload System** (GridFS ready)
-- 🔄 **Research Paper Management**
-- 🔄 **Project Sharing Features**
-- 🔄 **Idea Bank System**
-- 🔄 **Degree Guidance Recommendations**
-
-### 📋 Quick Commands:
-```powershell
-# Start the platform
-.\scripts\start-platform.ps1
-
-# Stop the platform  
-.\scripts\stop-platform.ps1
-
-# View logs
-docker compose logs -f web
-
-# Restart web service
-docker compose restart web
+# 2. Go to GitHub.com and find the EduScope repository
+# 3. Click "Compare & pull request" button
+# 4. Write a clear title and description of what you changed
+# 5. Click "Create pull request"
 ```
 
-## 📁 Project Structure
+## 📝 Pull Request Guidelines
+
+### Good Pull Request Title Examples:
+- ✅ "Add search functionality to research papers page"
+- ✅ "Fix mobile responsive design for navigation"
+- ✅ "Improve user profile edit form validation"
+
+### What to Include in Description:
+```markdown
+## What I Changed
+- Added search bar to research papers page
+- Implemented filter by category
+- Added loading spinner while searching
+
+## How to Test
+1. Go to /research page
+2. Try searching for "AI" or "Machine Learning"
+3. Test filtering by different categories
+```
+
+## 🆘 Common Issues & Solutions
+
+### Docker Issues
+```bash
+# If containers won't start:
+docker compose down
+docker compose up --build
+
+# If MongoDB connection fails:
+docker compose restart mongodb
+```
+
+### Git Issues
+```bash
+# If you need to switch back to main branch:
+git checkout main
+
+# If you want to get latest changes:
+git pull origin main
+```
+
+### Application Issues
+```bash
+# If website won't load:
+# 1. Check if Docker Desktop is running
+# 2. Check if containers are running: docker compose ps
+# 3. Restart: docker compose restart web
+```
+
+## 📁 Important Folders for Beginners
 
 ```
 EduScope/
 ├── src/
-│   ├── app/                 # Next.js 14 app router
-│   │   ├── (auth)/         # Authentication routes
-│   │   ├── (dashboard)/    # Dashboard routes
-│   │   ├── research/       # Research paper pages
-│   │   ├── projects/       # Project sharing pages
-│   │   ├── ideas/          # Idea bank pages
-│   │   ├── guidance/       # Degree guidance pages
-│   │   └── api/            # API routes
-│   ├── components/         # React components
-│   │   ├── ui/             # shadcn/ui components
-│   │   ├── research/       # Research-specific components
-│   │   ├── projects/       # Project components
-│   │   ├── ideas/          # Idea bank components
-│   │   └── guidance/       # Guidance components
-│   ├── lib/                # Utilities and configurations
-│   │   ├── db/             # Database models and config
-│   │   ├── auth/           # Authentication utilities
-│   │   └── validation/     # Form validation schemas
-│   ├── types/              # TypeScript definitions
-│   └── hooks/              # Custom React hooks
-├── scripts/                # Startup scripts
-├── docker-compose.yml      # Docker services
-├── Dockerfile             # Next.js container
-└── README.md
+│   ├── app/                 # Website pages (what users see)
+│   │   ├── research/       # Research papers pages
+│   │   ├── ideas/          # Ideas bank pages  
+│   │   ├── dashboard/      # User dashboard
+│   │   └── admin/          # Admin management pages
+│   ├── components/         # Reusable UI pieces
+│   │   ├── ui/             # Buttons, cards, modals, etc.
+│   │   └── layout/         # Navigation, headers, footers
+│   ├── lib/                # Database and utilities
+│   │   ├── db/             # Database models and connections
+│   │   └── auth/           # Authentication logic
+│   └── types/              # TypeScript type definitions
+├── scripts/                # Helper scripts for setup
+├── public/                 # Images, icons, static files
+└── README.md              # This file!
 ```
 
-## 🔧 Development
+> **Tip**: Start by looking at files in `src/app/` and `src/components/ui/` - these are the easiest to understand and modify!
 
-### Environment Variables
-Create a `.env.local` file with the following:
+## 🎨 Design Guidelines
 
-```env
-MONGODB_URI=mongodb://mongodb:27017/eduscope
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your-super-secret-key-here
-DB_NAME=eduscope
-MAX_FILE_SIZE=50MB
-ALLOWED_FILE_TYPES=.pdf,.doc,.docx,.ppt,.pptx,.txt
-NSBM_DOMAIN=@students.nsbm.ac.lk
-NODE_ENV=development
-```
+### Colors & Branding
+- **Primary**: Blue (#3B82F6) - for main actions and links
+- **Secondary**: Green (#10B981) - for success states
+- **Accent**: Orange (#F59E0B) - for highlights and saved items
+- **Neutral**: Gray tones for backgrounds and text
 
-### Available Scripts
-```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
-npm run type-check   # Run TypeScript check
-```
+### Component Standards
+- Use shadcn/ui components when possible
+- Follow existing patterns in the codebase
+- Ensure mobile responsiveness
+- Add loading states for better UX
+- Include proper error handling
 
-### Docker Commands
-```bash
-# Start all services
-docker compose up
+## 🎯 Good First Contributions (Perfect for Beginners!)
 
-# Start in background
-docker compose up -d
+### 🟢 Easy (Great for first-time contributors):
+- 🎨 **UI Improvements** - Change button colors, improve spacing, add icons
+- 📱 **Mobile Fixes** - Make pages work better on phones and tablets
+- 📝 **Text Changes** - Update help text, error messages, or descriptions
+- 🔍 **Search Features** - Add search bars or filter options
+- 📊 **Data Display** - Improve how research papers are shown
 
-# Stop all services
-docker compose down
+### 🟡 Medium (After you've made a few easy contributions):
+- 📝 **Form Validation** - Add helpful error messages to forms
+- � **Navigation** - Improve how users move between pages
+- 📈 **Statistics** - Add charts or counters to show data
+- 💾 **Data Management** - Help users organize their saved papers
 
-# View logs
-docker compose logs web
-docker compose logs mongodb
+### 🔴 Advanced (For experienced contributors):
+- 🔐 **Authentication** - User login/logout improvements
+- �️ **Database** - Backend API development
+- 🔧 **Performance** - Speed up page loading
+- 🛡️ **Security** - Add security features
 
-# Rebuild containers
-docker compose up --build
-```
+### 💡 Ideas for Your First Contribution:
+- Add a "Back to Top" button on long pages
+- Improve the color scheme of buttons
+- Add loading animations
+- Create a "How to Use" help section
+- Add dark mode toggle
+- Improve the research paper card design
 
-## 🏗️ Architecture
+## 💬 Getting Help & Support
 
-### Features
-1. **Research Paper Management**
-   - Upload PDFs, DOCs, presentations
-   - Categorize by academic field and year
-   - Search and filter functionality
-   - Download tracking and analytics
+### 🆘 Stuck? Don't Give Up!
+- **GitHub Issues**: Report bugs or ask for help
+- **Code Review**: Tag maintainers in your pull request for feedback
+- **Documentation**: Check this README or the `/docs` folder
 
-2. **Project Sharing**
-   - Multimedia project uploads
-   - Collaborative features
-   - Version control
-   - Academic integrity measures
+### 🤝 Community Guidelines
+- Be respectful and kind to other contributors
+- Ask questions - no question is too basic!
+- Help others when you can
+- Share your learning experiences
 
-3. **Idea Bank**
-   - Research topic suggestions
-   - Voting and popularity system
-   - Category-based organization
-   - Collaborative idea development
-
-4. **Degree Guidance**
-   - Questionnaire-based assessment
-   - Personalized recommendations
-   - Detailed program information
-   - Career path projections
-
-### Security Features
-- NSBM email domain validation
-- Role-based access control
-- Content moderation
-- File upload validation
-- Academic integrity checks
-
-## 📊 Database Schema
-
-### Core Collections
-- **Users**: Student profiles and authentication
-- **ResearchPapers**: Academic papers and metadata
-- **Projects**: Student projects and files
-- **Ideas**: Research ideas and community voting
-- **DegreePrograms**: Available degree information
-- **Assessments**: Degree guidance questionnaires
-
-## 🔐 Authentication
-
-- NextAuth.js integration
-- NSBM email domain restriction
-- Role-based permissions (Student, Admin, Moderator)
-- Secure session management
-
-## 📱 Responsive Design
-
-Built with Tailwind CSS and shadcn/ui components for:
-- Mobile-first responsive design
-- Dark/light mode support
-- Accessibility compliance
-- NSBM branding integration
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests and linting
-5. Submit a pull request
-
-## 📝 License
-
-This project is proprietary software developed for NSBM Green University.
-
-## 🆘 Support
-
-For issues and support:
-- Check the documentation
-- Review existing issues
-- Contact the development team
+### 📚 Learning Resources
+- **Git Tutorial**: https://learngitbranching.js.org/
+- **React/Next.js**: https://nextjs.org/learn
+- **TypeScript**: https://www.typescriptlang.org/docs/
+- **Tailwind CSS**: https://tailwindcss.com/docs
 
 ---
 
-**EduScope** - Empowering NSBM students through collaborative academic excellence! 🎓✨
+**🎉 Welcome to EduScope! We're excited to have you contribute to student research at NSBM! 🚀**
+
+*Remember: Every expert was once a beginner. Take your time, ask questions, and enjoy the journey!*
