@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useToast } from "@/components/ui/toast"
 import { ArrowLeft, Upload, Plus, X, Loader2 } from "lucide-react"
 import { FileUpload } from "@/components/ui/file-upload"
 
@@ -44,15 +45,26 @@ export default function ResearchUploadPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const { addToast } = useToast()
 
   // File upload handlers
   const handleFileUploadSuccess = (fileId: string, filename: string) => {
     setFormData(prev => ({ ...prev, fileId, filename }))
     setError('') // Clear any previous errors
+    addToast({
+      title: "File Uploaded",
+      description: `${filename} uploaded successfully`,
+      variant: "success"
+    })
   }
 
   const handleFileUploadError = (error: string) => {
     setError(error)
+    addToast({
+      title: "File Upload Error",
+      description: error,
+      variant: "error"
+    })
   }
 
   if (status === "loading") {
@@ -110,21 +122,51 @@ export default function ResearchUploadPage() {
         tags: formData.tags.filter(tag => tag.trim())
       }
 
-      // Validation
+      // Validation with toast notifications
       if (!cleanedData.title.trim()) {
-        throw new Error('Title is required')
+        addToast({
+          title: "Validation Error",
+          description: "Title is required",
+          variant: "error"
+        })
+        setLoading(false)
+        return
       }
       if (cleanedData.authors.length === 0) {
-        throw new Error('At least one author is required')
+        addToast({
+          title: "Validation Error", 
+          description: "At least one author is required",
+          variant: "error"
+        })
+        setLoading(false)
+        return
       }
       if (!cleanedData.abstract.trim()) {
-        throw new Error('Abstract is required')
+        addToast({
+          title: "Validation Error",
+          description: "Abstract is required", 
+          variant: "error"
+        })
+        setLoading(false)
+        return
       }
       if (!cleanedData.field) {
-        throw new Error('Field is required')
+        addToast({
+          title: "Validation Error",
+          description: "Field is required",
+          variant: "error"
+        })
+        setLoading(false)
+        return
       }
       if (!formData.fileId) {
-        throw new Error('Please upload a research paper file')
+        addToast({
+          title: "Validation Error",
+          description: "Please upload a research paper file",
+          variant: "error"
+        })
+        setLoading(false)
+        return
       }
 
       // Add fileId to the data being sent
@@ -145,14 +187,30 @@ export default function ResearchUploadPage() {
 
       if (data.success) {
         setSuccess('Research paper uploaded successfully!')
+        addToast({
+          title: "Upload Successful",
+          description: "Your research paper has been uploaded and is pending review.",
+          variant: "success"
+        })
         setTimeout(() => {
           router.push(`/research/${data.data._id}`)
         }, 2000)
       } else {
-        throw new Error(data.error || 'Failed to upload research paper')
+        addToast({
+          title: "Upload Failed",
+          description: data.error || "Failed to upload research paper",
+          variant: "error"
+        })
+        setError(data.error || 'Failed to upload research paper')
       }
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'An unexpected error occurred')
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
+      setError(errorMessage)
+      addToast({
+        title: "Upload Error",
+        description: errorMessage,
+        variant: "error"
+      })
     } finally {
       setLoading(false)
     }
@@ -160,46 +218,29 @@ export default function ResearchUploadPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-4">
+      {/* Enhanced Header */}
+      <header className="border-b border-gray-200">
+        <div className="container mx-auto px-4 py-6">
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" asChild>
+            <Button variant="ghost" asChild className="text-gray-600 hover:text-gray-900">
               <Link href="/research">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Research
               </Link>
             </Button>
-            <span className="text-gray-400">|</span>
-            <h1 className="text-xl font-semibold text-gray-800">Upload Research Paper</h1>
+            <div className="h-6 w-px bg-gray-300"></div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Upload Research Paper</h1>
+              <p className="text-sm text-gray-600 mt-1">Share your research with the NSBM academic community</p>
+            </div>
           </div>
         </div>
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        <Card className="max-w-4xl mx-auto">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Upload className="h-5 w-5 mr-2" />
-              Upload Research Paper
-            </CardTitle>
-            <CardDescription>
-              Share your research with the NSBM academic community
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        <Card className="max-w-4xl mx-auto shadow-lg">
+          <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              
-              {success && (
-                <Alert>
-                  <AlertDescription>{success}</AlertDescription>
-                </Alert>
-              )}
 
               {/* Title */}
               <div className="space-y-2">
@@ -297,8 +338,6 @@ export default function ResearchUploadPage() {
                       <SelectItem value="business">Business</SelectItem>
                       <SelectItem value="computing">Computing</SelectItem>
                       <SelectItem value="science">Science</SelectItem>
-                      <SelectItem value="management">Management</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

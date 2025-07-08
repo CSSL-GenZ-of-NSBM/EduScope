@@ -20,9 +20,7 @@ import {
   Filter,
   ArrowUpDown,
   Plus,
-  FileText,
-  TrendingUp,
-  Users
+  FileText
 } from "lucide-react"
 import { ResearchPaper } from "@/types"
 
@@ -231,166 +229,136 @@ export default function ResearchPage() {
               Discover and share academic research from NSBM Green University
             </p>
           </div>
-          <Button className="mt-4 md:mt-0 bg-green-600 hover:bg-green-700" asChild>
-            <Link href="/research/upload">
-              <Plus className="w-4 h-4 mr-2" />
-              Upload Paper
-            </Link>
-          </Button>
+          <div className="flex gap-3 mt-4 md:mt-0">
+            <Button variant="outline" asChild>
+              <Link href="/research/my-papers">
+                <FileText className="w-4 h-4 mr-2" />
+                My Research
+              </Link>
+            </Button>
+            <Button className="bg-green-600 hover:bg-green-700" asChild>
+              <Link href="/research/upload">
+                <Plus className="w-4 h-4 mr-2" />
+                Upload Paper
+              </Link>
+            </Button>
+          </div>
         </div>
 
-        {/* Quick Stats - Compact version */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          <Card className="p-3">
-            <div className="flex items-center">
-              <FileText className="w-6 h-6 text-blue-500 mr-2" />
+        {/* Stats Section */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <Card>
+            <CardContent className="p-4 flex items-center">
+              <FileText className="w-8 h-8 text-blue-500 mr-3" />
               <div>
-                <p className="text-lg font-bold">
+                <p className="text-2xl font-bold">
                   {statsLoading ? "..." : stats?.totalPapers || 0}
                 </p>
-                <p className="text-xs text-gray-600">Total Papers</p>
+                <p className="text-sm text-gray-600">Total Papers</p>
               </div>
-            </div>
+            </CardContent>
           </Card>
-          <Card className="p-3">
-            <div className="flex items-center">
-              <TrendingUp className="w-6 h-6 text-green-500 mr-2" />
+
+          <Card>
+            <CardContent className="p-4 flex items-center">
+              <Upload className="w-8 h-8 text-green-500 mr-3" />
               <div>
-                <p className="text-lg font-bold">
+                <p className="text-2xl font-bold">
                   {statsLoading ? "..." : stats?.papersThisWeek || 0}
                 </p>
-                <p className="text-xs text-gray-600">This Week</p>
+                <p className="text-sm text-gray-600">This Week</p>
               </div>
-            </div>
+            </CardContent>
           </Card>
-          <Card className="p-3">
-            <div className="flex items-center">
-              <Users className="w-6 h-6 text-purple-500 mr-2" />
+
+          <Card>
+            <CardContent className="p-4 flex items-center">
+              <User className="w-8 h-8 text-purple-500 mr-3" />
               <div>
-                <p className="text-lg font-bold">
+                <p className="text-2xl font-bold">
                   {statsLoading ? "..." : stats?.uniqueContributors || 0}
                 </p>
-                <p className="text-xs text-gray-600">Contributors</p>
+                <p className="text-sm text-gray-600">Contributors</p>
               </div>
-            </div>
+            </CardContent>
           </Card>
-          <Card className="p-3">
-            <div className="flex items-center">
-              <Download className="w-6 h-6 text-orange-500 mr-2" />
+
+          <Card>
+            <CardContent className="p-4 flex items-center">
+              <Download className="w-8 h-8 text-orange-500 mr-3" />
               <div>
-                <p className="text-lg font-bold">
+                <p className="text-2xl font-bold">
                   {statsLoading ? "..." : stats?.totalDownloads || 0}
                 </p>
-                <p className="text-xs text-gray-600">Downloads</p>
+                <p className="text-sm text-gray-600">Downloads</p>
               </div>
-            </div>
+            </CardContent>
           </Card>
         </div>
 
-        {/* Research Field Distribution - Inline with Search */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-          {/* Search and Filters */}
-          <div className="lg:col-span-3">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center text-lg">
-                  <Search className="h-4 w-4 mr-2" />
-                  Search & Filter
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {/* Search Input */}
-                  <div className="lg:col-span-2 flex gap-2">
-                    <Input
-                      placeholder="Search papers, authors, keywords..."
-                      value={searchInput}
-                      onChange={(e) => handleSearchInputChange(e.target.value)}
-                      onKeyPress={handleSearchKeyPress}
-                      className="flex-1"
-                    />
-                    <Button onClick={handleSearch} className="bg-green-600 hover:bg-green-700">
-                      <Search className="h-4 w-4" />
-                    </Button>
-                  </div>
+        {/* Search and Filters */}
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center text-lg">
+              <Search className="h-4 w-4 mr-2" />
+              Search & Filter
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* Search Input */}
+              <div className="lg:col-span-2 flex gap-2">
+                <Input
+                  placeholder="Search papers, authors, keywords..."
+                  value={searchInput}
+                  onChange={(e) => handleSearchInputChange(e.target.value)}
+                  onKeyPress={handleSearchKeyPress}
+                  className="flex-1"
+                />
+                <Button onClick={handleSearch} className="bg-green-600 hover:bg-green-700">
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
 
-                  {/* Field Filter */}
-                  <Select
-                    value={searchParams.field}
-                    onValueChange={(value) => handleFilterChange('field', value === 'all' ? '' : value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Fields" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Fields</SelectItem>
-                      <SelectItem value="Computer Science">Computer Science</SelectItem>
-                      <SelectItem value="Engineering">Engineering</SelectItem>
-                      <SelectItem value="Business">Business</SelectItem>
-                      <SelectItem value="Science">Science</SelectItem>
-                    </SelectContent>
-                  </Select>
+              {/* Field Filter */}
+              <Select
+                value={searchParams.field}
+                onValueChange={(value) => handleFilterChange('field', value === 'all' ? '' : value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All Fields" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Fields</SelectItem>
+                  <SelectItem value="engineering">Engineering</SelectItem>
+                  <SelectItem value="computing">Computing</SelectItem>
+                  <SelectItem value="business">Business</SelectItem>
+                  <SelectItem value="science">Science</SelectItem>
+                </SelectContent>
+              </Select>
 
-                  {/* Sort */}
-                  <Select
-                    value={`${searchParams.sortBy}-${searchParams.sortOrder}`}
-                    onValueChange={(value) => {
-                      const [sortBy, sortOrder] = value.split('-')
-                      setSearchParams(prev => ({ ...prev, sortBy, sortOrder }))
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="createdAt-desc">Newest First</SelectItem>
-                      <SelectItem value="createdAt-asc">Oldest First</SelectItem>
-                      <SelectItem value="downloadCount-desc">Most Downloaded</SelectItem>
-                      <SelectItem value="title-asc">Title A-Z</SelectItem>
-                      <SelectItem value="year-desc">Year (Recent)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Field Distribution - Smaller Compact Sidebar */}
-          <div className="lg:col-span-1">
-            {stats && stats.papersByField && stats.papersByField.length > 0 && (
-              <Card className="h-fit">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center text-sm">
-                    <BookOpen className="h-3 w-3 mr-2" />
-                    By Field
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-1">
-                    {stats.papersByField.slice(0, 3).map((field, index) => {
-                      const colors = [
-                        'bg-blue-50 border-blue-200 text-blue-700',
-                        'bg-green-50 border-green-200 text-green-700',
-                        'bg-purple-50 border-purple-200 text-purple-700'
-                      ]
-                      return (
-                        <div key={field._id} className={`p-1.5 rounded border text-center ${colors[index]}`}>
-                          <p className="font-medium text-xs">{field._id || 'Other'}</p>
-                          <p className="text-sm font-bold">{field.count}</p>
-                        </div>
-                      )
-                    })}
-                    {stats.papersByField.length > 3 && (
-                      <div className="text-center text-xs text-gray-500 pt-1">
-                        +{stats.papersByField.length - 3} more
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </div>
+              {/* Sort */}
+              <Select
+                value={`${searchParams.sortBy}-${searchParams.sortOrder}`}
+                onValueChange={(value) => {
+                  const [sortBy, sortOrder] = value.split('-')
+                  setSearchParams(prev => ({ ...prev, sortBy, sortOrder }))
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="createdAt-desc">Newest First</SelectItem>
+                  <SelectItem value="createdAt-asc">Oldest First</SelectItem>
+                  <SelectItem value="downloadCount-desc">Most Downloaded</SelectItem>
+                  <SelectItem value="title-asc">Title A-Z</SelectItem>
+                  <SelectItem value="year-desc">Year (Recent)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Results Count and Actions */}
         <div className="mb-6">

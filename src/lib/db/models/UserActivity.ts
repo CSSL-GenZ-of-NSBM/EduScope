@@ -5,6 +5,7 @@ export enum ActivityType {
   DOWNLOAD = 'download',
   VIEW = 'view',
   DELETE = 'delete',
+  UPDATE = 'update',
   APPROVE = 'approve',
   REJECT = 'reject'
 }
