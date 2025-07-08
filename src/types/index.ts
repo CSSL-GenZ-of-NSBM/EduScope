@@ -89,8 +89,10 @@ export interface ResearchPaper extends BaseDocument {
   tags: string[];
   downloadCount: number;
   viewCount: number;
+  saveCount: number;
   viewedBy: string[]; // Array of User IDs who viewed this paper
   downloadedBy: string[]; // Array of User IDs who downloaded this paper
+  savedBy: string[]; // Array of User IDs who saved this paper
   status: ContentStatus;
   keywords?: string[];
   supervisor?: string;
@@ -133,8 +135,10 @@ export interface ResearchPaperSchema extends BaseSchema {
   tags: string[];
   downloadCount: number;
   viewCount: number;
+  saveCount: number;
   viewedBy: any[]; // Array of ObjectIds in schema, strings in response
   downloadedBy: any[]; // Array of ObjectIds in schema, strings in response
+  savedBy: any[]; // Array of ObjectIds in schema, strings in response
   status: ContentStatus;
   keywords?: string[];
   supervisor?: string;

@@ -1,10 +1,11 @@
 import mongoose, { Schema, Document, Types } from 'mongoose'
 import { type ResearchPaperSchema, AcademicField, Faculty, ContentStatus } from '@/types'
 
-interface ResearchPaperDocument extends Omit<ResearchPaperSchema, 'uploadedBy' | 'viewedBy' | 'downloadedBy' | 'pendingChanges' | 'pendingDeletion'>, Document {
+interface ResearchPaperDocument extends Omit<ResearchPaperSchema, 'uploadedBy' | 'viewedBy' | 'downloadedBy' | 'savedBy' | 'pendingChanges' | 'pendingDeletion'>, Document {
   uploadedBy: Types.ObjectId;
   viewedBy: Types.ObjectId[];
   downloadedBy: Types.ObjectId[];
+  savedBy: Types.ObjectId[];
   pendingChanges?: {
     title?: string;
     authors?: string[];
@@ -94,11 +95,19 @@ const ResearchPaperSchema = new Schema<ResearchPaperDocument>({
     type: Number,
     default: 0
   },
+  saveCount: {
+    type: Number,
+    default: 0
+  },
   viewedBy: [{
     type: Schema.Types.ObjectId,
     ref: 'User'
   }],
   downloadedBy: [{
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  savedBy: [{
     type: Schema.Types.ObjectId,
     ref: 'User'
   }],

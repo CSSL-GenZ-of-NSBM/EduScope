@@ -20,7 +20,8 @@ import {
   Filter,
   ArrowUpDown,
   Plus,
-  FileText
+  FileText,
+  Bookmark
 } from "lucide-react"
 import { ResearchPaper } from "@/types"
 
@@ -234,6 +235,12 @@ export default function ResearchPage() {
               <Link href="/research/my-papers">
                 <FileText className="w-4 h-4 mr-2" />
                 My Research
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/research/saved-papers">
+                <Bookmark className="w-4 h-4 mr-2" />
+                Saved Papers
               </Link>
             </Button>
             <Button className="bg-green-600 hover:bg-green-700" asChild>

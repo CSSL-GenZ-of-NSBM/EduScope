@@ -7,7 +7,9 @@ export enum ActivityType {
   DELETE = 'delete',
   UPDATE = 'update',
   APPROVE = 'approve',
-  REJECT = 'reject'
+  REJECT = 'reject',
+  SAVE = 'save',
+  UNSAVE = 'unsave'
 }
 
 interface UserActivityDocument extends Document {

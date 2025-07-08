@@ -7,7 +7,7 @@ import { Types } from "mongoose"
 
 interface ActivityResponse {
   _id: string
-  type: 'upload' | 'download' | 'view' | 'delete' | 'approve' | 'reject'
+  type: 'upload' | 'download' | 'view' | 'delete' | 'approve' | 'reject' | 'save' | 'unsave'
   title: string
   date: Date
   paperId?: string

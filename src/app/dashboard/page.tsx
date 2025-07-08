@@ -22,7 +22,9 @@ import {
   RefreshCw,
   Download,
   Eye,
-  Trash2
+  Trash2,
+  Bookmark,
+  BookmarkX
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -284,6 +286,8 @@ export default function DashboardPage() {
                       activity.type === 'download' ? 'bg-blue-100' :
                       activity.type === 'view' ? 'bg-purple-100' :
                       activity.type === 'delete' ? 'bg-red-100' :
+                      activity.type === 'save' ? 'bg-orange-100' :
+                      activity.type === 'unsave' ? 'bg-gray-100' :
                       'bg-gray-100'
                     }`}>
                       {activity.type === 'upload' ? (
@@ -294,6 +298,10 @@ export default function DashboardPage() {
                         <Eye className="h-4 w-4 text-purple-600" />
                       ) : activity.type === 'delete' ? (
                         <Trash2 className="h-4 w-4 text-red-600" />
+                      ) : activity.type === 'save' ? (
+                        <Bookmark className="h-4 w-4 text-orange-600" />
+                      ) : activity.type === 'unsave' ? (
+                        <BookmarkX className="h-4 w-4 text-gray-600" />
                       ) : (
                         <FileText className="h-4 w-4 text-gray-600" />
                       )}
@@ -308,6 +316,10 @@ export default function DashboardPage() {
                           `You viewed: ${activity.title}` :
                          activity.type === 'delete' ?
                           `You deleted: ${activity.title}` :
+                         activity.type === 'save' ?
+                          `You saved: ${activity.title}` :
+                         activity.type === 'unsave' ?
+                          `You unsaved: ${activity.title}` :
                           activity.title
                         }
                       </p>

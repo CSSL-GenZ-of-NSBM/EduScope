@@ -7,7 +7,7 @@ import Navbar from "@/components/layout/Navbar"
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'EduScope - NSBM Green University Academic Platform',
+  title: 'EduScope - NSBM Green University Research Platform',
   description: 'A comprehensive academic platform for NSBM Green University students to share research papers, projects, ideas, and get degree guidance.',
   keywords: ['NSBM', 'academic', 'research', 'education', 'university', 'papers', 'projects'],
   icons: {
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     apple: '/images/logo.png',
   },
   openGraph: {
-    title: 'EduScope - NSBM Green University Academic Platform',
+    title: 'EduScope - NSBM Green University Research Platform',
     description: 'A comprehensive academic platform for NSBM Green University students to share research papers, projects, ideas, and get degree guidance.',
     images: ['/images/logo.png'],
   },

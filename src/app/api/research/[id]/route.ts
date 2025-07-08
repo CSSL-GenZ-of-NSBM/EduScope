@@ -256,6 +256,105 @@ export async function PATCH(
       }
     }
 
+    // Handle save/unsave functionality
+    if (action === 'save' || action === 'unsave') {
+      const userId = new Types.ObjectId(session.user.id)
+      
+      try {
+        let updateResult;
+        
+        if (action === 'save') {
+          // Add user to savedBy array and increment save count
+          updateResult = await ResearchPaper.findOneAndUpdate(
+            { 
+              _id: id,
+              savedBy: { $ne: userId } // Only update if user hasn't saved yet
+            },
+            { 
+              $addToSet: { savedBy: userId },
+              $inc: { saveCount: 1 } 
+            },
+            { new: true }
+          )
+
+          // Only create activity if the update actually happened
+          if (updateResult) {
+            await UserActivity.create({
+              userId: userId,
+              activityType: ActivityType.SAVE,
+              targetId: paper._id,
+              targetTitle: paper.title,
+              metadata: {
+                paperField: paper.field,
+                paperYear: paper.year,
+                fileName: paper.fileName
+              }
+            })
+
+            return NextResponse.json({
+              success: true,
+              data: updateResult,
+              message: "Paper saved successfully"
+            })
+          } else {
+            // User has already saved, return current paper
+            return NextResponse.json({
+              success: true,
+              data: paper,
+              message: "Paper already saved by user"
+            })
+          }
+        } else { // unsave
+          // Remove user from savedBy array and decrement save count
+          updateResult = await ResearchPaper.findOneAndUpdate(
+            { 
+              _id: id,
+              savedBy: userId // Only update if user has saved
+            },
+            { 
+              $pull: { savedBy: userId },
+              $inc: { saveCount: -1 } 
+            },
+            { new: true }
+          )
+
+          if (updateResult) {
+            // Create unsave activity
+            await UserActivity.create({
+              userId: userId,
+              activityType: ActivityType.UNSAVE,
+              targetId: paper._id,
+              targetTitle: paper.title,
+              metadata: {
+                paperField: paper.field,
+                paperYear: paper.year,
+                fileName: paper.fileName
+              }
+            })
+
+            return NextResponse.json({
+              success: true,
+              data: updateResult,
+              message: "Paper unsaved successfully"
+            })
+          } else {
+            // User hasn't saved this paper, return current paper
+            return NextResponse.json({
+              success: true,
+              data: paper,
+              message: "Paper was not saved by user"
+            })
+          }
+        }
+      } catch (error) {
+        console.error('Error handling save/unsave:', error)
+        return NextResponse.json(
+          { success: false, error: "Failed to update paper save status" },
+          { status: 500 }
+        )
+      }
+    }
+
     return NextResponse.json(
       { success: false, error: "Invalid action" },
       { status: 400 }
