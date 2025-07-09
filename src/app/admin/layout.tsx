@@ -28,11 +28,11 @@ export default function AdminLayout({
             <a href="/admin/research" className="block px-6 py-3 text-gray-700 hover:bg-gray-100 border-r-2 border-transparent hover:border-blue-500">
               Research Papers
             </a>
-            <a href="/admin/pending-requests" className="block px-6 py-3 text-gray-700 hover:bg-gray-100 border-r-2 border-transparent hover:border-blue-500">
-              Pending Requests
-            </a>
             <a href="/admin/ideas" className="block px-6 py-3 text-gray-700 hover:bg-gray-100 border-r-2 border-transparent hover:border-blue-500">
               Ideas
+            </a>
+            <a href="/admin/pending-requests" className="block px-6 py-3 text-gray-700 hover:bg-gray-100 border-r-2 border-transparent hover:border-blue-500">
+              Pending Requests
             </a>
             {userRole === 'admin' && (
               <a href="/admin/users" className="block px-6 py-3 text-gray-700 hover:bg-gray-100 border-r-2 border-transparent hover:border-blue-500">

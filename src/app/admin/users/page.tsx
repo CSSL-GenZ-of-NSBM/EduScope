@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { User, Mail, Calendar, Shield, Trash2, Edit } from "lucide-react"
+import { User, Mail, Calendar, Shield, Trash2, Edit, Eye } from "lucide-react"
 
 interface AdminUser {
   _id: string
@@ -211,7 +211,7 @@ export default function AdminUsersPage() {
                     onClick={() => router.push(`/admin/users/${user._id}`)}
                     title="View Profile"
                   >
-                    <User className="w-3 h-3 mr-1" /> View Profile
+                    <Eye className="w-4 h-4" />
                   </Button>
                   <Button 
                     variant="outline" 
@@ -220,20 +220,19 @@ export default function AdminUsersPage() {
                     onClick={() => router.push(`/admin/users/${user._id}/edit`)}
                     title="Edit User"
                   >
-                    <Edit className="w-3 h-3 mr-1" /> Edit
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => handleDeleteUser(user._id, user.name)}
+                    disabled={deletingUsers.has(user._id)}
+                    title="Delete User"
+                  >
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
-                <Button 
-                  variant="destructive" 
-                  size="sm"
-                  className="w-full"
-                  onClick={() => handleDeleteUser(user._id, user.name)}
-                  disabled={deletingUsers.has(user._id)}
-                  title="Delete User"
-                >
-                  <Trash2 className="w-3 h-3 mr-1" />
-                  {deletingUsers.has(user._id) ? 'Deleting...' : 'Delete'}
-                </Button>
               </div>
             </CardContent>
           </Card>
