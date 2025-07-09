@@ -9,19 +9,21 @@ export enum ActivityType {
   APPROVE = 'approve',
   REJECT = 'reject',
   SAVE = 'save',
-  UNSAVE = 'unsave'
+  UNSAVE = 'unsave',
+  YEAR_CHANGE_REQUEST = 'year_change_request'
 }
 
 interface UserActivityDocument extends Document {
   userId: Types.ObjectId;
   activityType: ActivityType;
-  targetId: Types.ObjectId; // ID of the paper/content involved
-  targetTitle: string; // Title of the paper for easy reference
+  targetId?: Types.ObjectId; // ID of the paper/content involved (optional for some activity types)
+  targetTitle?: string; // Title of the paper for easy reference (optional for some activity types)
   metadata?: {
     paperField?: string;
     paperYear?: number;
     fileName?: string;
   };
+  details?: any; // For storing activity-specific details
   createdAt: Date;
 }
 
@@ -38,12 +40,16 @@ const UserActivitySchema = new Schema<UserActivityDocument>({
   },
   targetId: {
     type: Schema.Types.ObjectId,
-    required: true
+    required: false // Made optional
   },
   targetTitle: {
     type: String,
-    required: true,
+    required: false, // Made optional
     trim: true
+  },
+  details: {
+    type: Schema.Types.Mixed, // For storing additional activity details
+    required: false
   },
   metadata: {
     paperField: String,

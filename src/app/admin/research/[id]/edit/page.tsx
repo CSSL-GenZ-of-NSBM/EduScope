@@ -375,7 +375,11 @@ export default function EditResearchPaper() {
             </div>
           </div>
           <div className="mt-4">
-            <strong>Uploaded by:</strong> {typeof paper.uploadedBy === 'string' ? paper.uploadedBy : paper.uploadedBy?.name || 'Unknown'}
+            <strong>Uploaded by:</strong> {typeof paper.uploadedBy === 'string' 
+              ? paper.uploadedBy 
+              : (paper.uploadedBy && typeof paper.uploadedBy === 'object' && 'name' in paper.uploadedBy 
+                ? paper.uploadedBy.name 
+                : 'Unknown')}
           </div>
         </CardContent>
       </Card>

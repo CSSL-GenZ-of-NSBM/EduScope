@@ -95,30 +95,29 @@ export default function Navbar() {
                 {/* User dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="flex items-center space-x-2">
-                      <User className="h-4 w-4" />
-                      <span className="hidden sm:inline-block">{session.user?.name}</span>
+                    <Button variant="outline" size="sm" className="flex items-center space-x-2 max-w-[200px] sm:max-w-[250px]">
+                      <User className="h-4 w-4 flex-shrink-0" />
+                      <span className="hidden sm:inline-block truncate">
+                        {session.user?.name && session.user.name.length > 20 
+                          ? `${session.user.name.substring(0, 20)}...` 
+                          : session.user?.name
+                        }
+                      </span>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuContent align="end" className="w-72 max-w-[90vw]">
                     <DropdownMenuLabel>
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium">{session.user?.name}</p>
-                        <p className="text-xs text-muted-foreground">{session.user?.email}</p>
-                        <p className="text-xs text-muted-foreground">{session.user?.faculty}</p>
+                        <p className="text-sm font-medium leading-none break-words">{session.user?.name}</p>
+                        <p className="text-xs text-muted-foreground break-all leading-relaxed">{session.user?.email}</p>
+                        <p className="text-xs text-muted-foreground break-words">{session.user?.faculty}</p>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link href="/research/my-papers" className="flex items-center">
-                        <BookOpen className="mr-2 h-4 w-4" />
-                        <span>My Research</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/research/saved-papers" className="flex items-center">
-                        <Bookmark className="mr-2 h-4 w-4" />
-                        <span>Saved Papers</span>
+                      <Link href="/settings" className="flex items-center">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Settings</span>
                       </Link>
                     </DropdownMenuItem>
                     {(session.user?.role === 'admin' || session.user?.role === 'moderator') && (
@@ -130,9 +129,9 @@ export default function Navbar() {
                             <span>Admin Portal</span>
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator />
                       </>
                     )}
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => signOut()}>
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Sign out</span>

@@ -85,7 +85,7 @@ export interface ResearchPaper extends BaseDocument {
   fileName: string;
   fileSize: number;
   mimeType: string;
-  uploadedBy: string; // User ID
+  uploadedBy: string | { _id: string; name: string; email: string }; // Can be User ID or populated User object
   tags: string[];
   downloadCount: number;
   viewCount: number;

@@ -28,7 +28,9 @@ export default function AdminPendingRequestsPage() {
   const router = useRouter()
   const [pendingUpdates, setPendingUpdates] = useState<ResearchPaper[]>([])
   const [pendingDeletions, setPendingDeletions] = useState<ResearchPaper[]>([])
+  const [yearChangeRequests, setYearChangeRequests] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [yearChangeLoading, setYearChangeLoading] = useState(true)
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [diffViewOpen, setDiffViewOpen] = useState(false)
   const [selectedPaper, setSelectedPaper] = useState<ResearchPaper | null>(null)
@@ -47,6 +49,7 @@ export default function AdminPendingRequestsPage() {
         router.push("/dashboard")
       } else {
         fetchPendingRequests()
+        fetchYearChangeRequests()
       }
     }
   }, [status, session, router])
@@ -65,6 +68,22 @@ export default function AdminPendingRequestsPage() {
       console.error('Failed to fetch pending requests:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchYearChangeRequests = async () => {
+    setYearChangeLoading(true)
+    try {
+      const response = await fetch('/api/admin/year-change-requests?status=pending')
+      const data = await response.json()
+
+      if (data.success) {
+        setYearChangeRequests(data.data || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch year change requests:', error)
+    } finally {
+      setYearChangeLoading(false)
     }
   }
 
@@ -137,6 +156,55 @@ export default function AdminPendingRequestsPage() {
       addToast({
         title: "Network Error",
         description: `Failed to ${action} delete request. Please check your connection.`,
+        variant: "error"
+      })
+    } finally {
+      setProcessingId(null)
+    }
+  }
+
+  const handleYearChangeRequest = async (requestId: string, action: 'approve' | 'reject', reason?: string) => {
+    setProcessingId(requestId)
+    console.log('Frontend: Processing request with ID:', requestId)
+    console.log('Frontend: Current year change requests:', yearChangeRequests.map(r => r._id))
+    
+    try {
+      console.log(`Processing year change request ${requestId} with action ${action}`)
+      const response = await fetch(`/api/admin/year-change-requests/${requestId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ action, reason })
+      })
+
+      const responseData = await response.json()
+      console.log('Frontend: API response:', responseData)
+      
+      if (response.ok && responseData.success) {
+        addToast({
+          title: `Year Change Request ${action === 'approve' ? 'Approved' : 'Rejected'}`,
+          description: `The year change request has been ${action}d successfully.`,
+          variant: action === 'approve' ? 'success' : 'info'
+        })
+        
+        // Add a small delay to ensure the database update is complete
+        setTimeout(() => {
+          fetchYearChangeRequests()
+        }, 100)
+      } else {
+        console.error('API Error:', responseData)
+        addToast({
+          title: `Failed to ${action} request`,
+          description: responseData.error || "Please try again later.",
+          variant: "error"
+        })
+      }
+    } catch (error) {
+      console.error(`Error ${action}ing year change request:`, error)
+      addToast({
+        title: "Network Error",
+        description: `Failed to ${action} year change request. Please check your connection.`,
         variant: "error"
       })
     } finally {
@@ -387,6 +455,103 @@ export default function AdminPendingRequestsPage() {
         )}
       </div>
 
+      {/* Year Change Requests */}
+      <div className="mt-10">
+        <h2 className="text-2xl font-bold mb-4 flex items-center">
+          <Calendar className="h-6 w-6 mr-2 text-yellow-500" />
+          Year Change Requests ({yearChangeRequests.length})
+        </h2>
+        
+        {yearChangeLoading ? (
+          <Card className="text-center py-8">
+            <CardContent>
+              <div className="flex justify-center mb-4">
+                <svg className="animate-spin h-8 w-8 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </div>
+              <p className="text-gray-600">Loading year change requests...</p>
+            </CardContent>
+          </Card>
+        ) : yearChangeRequests.length === 0 ? (
+          <Card className="text-center py-8">
+            <CardContent>
+              <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <p className="text-gray-600">No pending year change requests</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {yearChangeRequests.map((request) => (
+              <Card key={request._id} className="border-yellow-200 bg-yellow-50 h-fit">
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start mb-2">
+                    <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 text-xs">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      Year Change Request
+                    </Badge>
+                  </div>
+                  <CardTitle className="text-base line-clamp-2 mb-2">
+                    {request.user?.name || 'Unknown User'}
+                  </CardTitle>
+                  <CardDescription className="space-y-1">
+                    <div className="flex items-center text-xs text-gray-600">
+                      <User className="h-3 w-3 mr-1" />
+                      {request.user?.email || 'No email'}
+                    </div>
+                    <div className="flex items-center text-xs text-gray-600">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      {new Date(request.createdAt).toLocaleDateString()}
+                    </div>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="bg-white p-3 rounded border mb-4 text-sm">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <p className="text-gray-500 text-xs mb-1">Current Year</p>
+                        <p className="font-medium">{request.details?.currentYear ? `Year ${request.details.currentYear}` : 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500 text-xs mb-1">Requested Year</p>
+                        <p className="font-medium">{request.details?.requestedYear ? `Year ${request.details.requestedYear}` : 'N/A'}</p>
+                      </div>
+                      <div className="col-span-2 mt-2">
+                        <p className="text-gray-500 text-xs mb-1">Faculty</p>
+                        <p className="font-medium">{request.user?.faculty || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleYearChangeRequest(request._id, 'reject')}
+                      disabled={processingId === request._id}
+                      className="flex-1 text-red-600 hover:text-red-700"
+                    >
+                      <XCircle className="h-3 w-3 mr-1" />
+                      Reject
+                    </Button>
+                    <Button 
+                      size="sm"
+                      onClick={() => handleYearChangeRequest(request._id, 'approve')}
+                      disabled={processingId === request._id}
+                      className="flex-1 bg-green-600 hover:bg-green-700"
+                    >
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Approve
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Diff View Modal */}
       {selectedPaper && (
         <DiffView
@@ -396,7 +561,7 @@ export default function AdminPendingRequestsPage() {
             setSelectedPaper(null)
           }}
           originalData={selectedPaper}
-          changedData={selectedPaper.pendingChanges}
+          changedData={selectedPaper.pendingChanges || {}}
           title={selectedPaper.title}
         />
       )}

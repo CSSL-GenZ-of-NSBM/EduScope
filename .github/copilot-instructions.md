@@ -15,6 +15,16 @@ EduScope is a comprehensive academic platform designed specifically for NSBM Gre
 - **API Client**: Axios or native fetch
 - **Type Safety**: TypeScript with strict mode
 
+## Project colors
+```
+122023
+2ecc40
+000000
+ffffff
+```
+
+- Font of the logo: Urbanist
+
 ## Architecture Principles
 
 ### Code Organization

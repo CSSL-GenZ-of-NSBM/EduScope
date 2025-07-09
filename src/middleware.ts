@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 
 export async function middleware(request: NextRequest) {
-  // Check if the request is for admin routes
-  if (request.nextUrl.pathname.startsWith('/admin')) {
+  const { pathname } = request.nextUrl
+
+  // Only handle admin routes
+  if (pathname.startsWith('/admin')) {
     const token = await getToken({ req: request })
     
     if (!token) {
@@ -19,7 +21,7 @@ export async function middleware(request: NextRequest) {
     }
     
     // Additional check for user management - only admins can access
-    if (request.nextUrl.pathname.startsWith('/admin/users') && userRole !== 'admin') {
+    if (pathname.startsWith('/admin/users') && userRole !== 'admin') {
       return NextResponse.redirect(new URL('/admin', request.url))
     }
   }
