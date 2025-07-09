@@ -54,38 +54,37 @@ export default function SignIn() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <div className="flex flex-col items-center space-y-4">
-            <div className="bg-gradient-to-br from-nsbm-green to-nsbm-blue p-3 rounded-full">
-              <Image
-                src="/images/logo.png"
-                alt="EduScope Logo"
-                width={64}
-                height={64}
-                className="w-16 h-16"
-              />
-            </div>
+      <Card className="w-full max-w-md shadow-lg">
+        <CardHeader className="space-y-3 pt-6">
+          <div className="flex flex-col items-center">
+            <Image
+              src="/images/logo.png"
+              alt="EduScope Logo"
+              width={150}
+              height={150}
+              className="h-16 w-auto object-contain mb-3"
+              priority
+            />
             <div className="text-center">
-              <CardTitle className="text-2xl font-bold">
+              <CardTitle className="text-xl font-bold text-primary">
                 Welcome to EduScope
               </CardTitle>
-              <CardDescription className="mt-2">
+              <CardDescription>
                 Sign in to your NSBM student account
               </CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-2 px-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="py-2">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="email">Student Email</Label>
+              <Label htmlFor="email" className="text-sm font-medium">Student Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -93,39 +92,48 @@ export default function SignIn() {
                 value={email}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                 required
+                className="h-11"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-sm font-medium">Password</Label>
               <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                 required
+                className="h-11"
               />
             </div>
             
             <Button
               type="submit"
-              className="w-full"
+              className="w-full mt-4"
+              size="lg"
               disabled={isLoading}
             >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Sign In
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing In...
+                </>
+              ) : (
+                "Sign In"
+              )}
             </Button>
           </form>
           
-          <div className="mt-4 text-center text-sm">
+          <div className="flex items-center justify-center mt-6 text-sm">
             <span className="text-muted-foreground">
-              Don't have an account?{" "}
+              Don't have an account?
             </span>
             <Link
               href="/auth/signup"
-              className="text-primary hover:underline"
+              className="ml-2 text-primary font-medium hover:underline"
             >
-              Sign up
+              Create Account
             </Link>
           </div>
         </CardContent>

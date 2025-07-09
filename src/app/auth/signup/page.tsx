@@ -84,157 +84,215 @@ export default function SignUp() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <div className="flex flex-col items-center space-y-4">
-            <div className="bg-gradient-to-br from-nsbm-green to-nsbm-blue p-3 rounded-full">
+      <Card className="w-full max-w-2xl shadow-lg">
+        <div className="flex flex-col md:flex-row">
+          {/* Left sidebar with logo (visible only on md screens and up) */}
+          <div className="hidden md:block md:w-1/3 md:border-r md:flex md:flex-col md:justify-center md:items-center md:bg-muted/30 md:rounded-l-lg md:p-6">
+            <div className="mb-6">
               <Image
                 src="/images/logo.png"
                 alt="EduScope Logo"
-                width={64}
-                height={64}
-                className="w-16 h-16"
+                width={180}
+                height={180}
+                className="h-24 w-auto object-contain"
+                priority
               />
             </div>
             <div className="text-center">
-              <CardTitle className="text-2xl font-bold">
+              <CardTitle className="text-2xl font-bold text-primary">
                 Join EduScope
               </CardTitle>
-              <CardDescription className="mt-2">
-                Create your NSBM student account
+              <CardDescription className="mt-2 text-sm">
+                Create your NSBM student account to access resources, share research, and connect with peers
               </CardDescription>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          
+          {/* Form section */}
+          <div className="md:w-2/3">
+            {/* Mobile header with logo */}
+            <CardHeader className="md:hidden space-y-1 pt-4 pb-0">
+              <div className="flex flex-col items-center">
+                <Image
+                  src="/images/logo.png"
+                  alt="EduScope Logo"
+                  width={150}
+                  height={150}
+                  className="h-16 w-auto object-contain mb-2"
+                  priority
+                />
+                <CardTitle className="text-xl font-bold text-primary">
+                  Join EduScope
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Create your NSBM student account
+                </CardDescription>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="pt-3 md:pt-6 px-4 md:px-6">
+              <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Status Messages */}
             {error && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="py-2 mb-2">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
             
             {success && (
-              <Alert>
-                <AlertDescription>{success}</AlertDescription>
+              <Alert className="py-2 mb-2 bg-green-50 border-green-200">
+                <AlertDescription className="text-green-700">{success}</AlertDescription>
               </Alert>
             )}
             
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                name="name"
-                type="text"
-                placeholder="John Doe"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-              />
+            {/* Form Fields in 2-column grid layout */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3">
+              {/* Personal Information */}
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-sm font-medium">Full Name</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  type="text"
+                  placeholder="John Doe"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required
+                  className="h-11"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium">Student Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="your.name@students.nsbm.ac.lk"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                  className="h-11"
+                />
+              </div>
+              
+              {/* Academic Information */}
+              <div className="space-y-2">
+                <Label htmlFor="studentId" className="text-sm font-medium">Student ID</Label>
+                <Input
+                  id="studentId"
+                  name="studentId"
+                  type="text"
+                  placeholder="2XXXX"
+                  value={formData.studentId}
+                  onChange={handleInputChange}
+                  required
+                  className="h-11"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="faculty" className="text-sm font-medium">Faculty</Label>
+                <Select 
+                  onValueChange={(value: string) => handleSelectChange("faculty", value)}
+                  value={formData.faculty}
+                >
+                  <SelectTrigger id="faculty" className="h-11">
+                    <SelectValue placeholder="Select your faculty" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Faculty of Engineering">Faculty of Engineering</SelectItem>
+                    <SelectItem value="Faculty of Business">Faculty of Business</SelectItem>
+                    <SelectItem value="Faculty of Computing">Faculty of Computing</SelectItem>
+                    <SelectItem value="Faculty of Sciences">Faculty of Sciences</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="year" className="text-sm font-medium">Academic Year</Label>
+                <Select 
+                  onValueChange={(value: string) => handleSelectChange("year", value)}
+                  value={formData.year}
+                >
+                  <SelectTrigger id="year" className="h-11">
+                    <SelectValue placeholder="Select your year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1st Year</SelectItem>
+                    <SelectItem value="2">2nd Year</SelectItem>
+                    <SelectItem value="3">3rd Year</SelectItem>
+                    <SelectItem value="4">4th Year</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Empty div for grid alignment */}
+              <div className="hidden sm:block"></div>
+              
+              {/* Password section - full width on mobile, side by side on desktop */}
+              <div className="col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3 mt-1">
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    required
+                    className="h-11"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword" className="text-sm font-medium">Confirm Password</Label>
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    required
+                    className="h-11"
+                  />
+                </div>
+              </div>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="email">Student Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="your.name@students.nsbm.ac.lk"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="studentId">Student ID</Label>
-              <Input
-                id="studentId"
-                name="studentId"
-                type="text"
-                placeholder="2XXXX"
-                value={formData.studentId}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="faculty">Faculty</Label>
-              <Select onValueChange={(value: string) => handleSelectChange("faculty", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your faculty" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Faculty of Engineering">Faculty of Engineering</SelectItem>
-                  <SelectItem value="Faculty of Business">Faculty of Business</SelectItem>
-                  <SelectItem value="Faculty of Computing">Faculty of Computing</SelectItem>
-                  <SelectItem value="Faculty of Applied Sciences">Faculty of Sciences</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="year">Academic Year</Label>
-              <Select onValueChange={(value: string) => handleSelectChange("year", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your year" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">1st Year</SelectItem>
-                  <SelectItem value="2">2nd Year</SelectItem>
-                  <SelectItem value="3">3rd Year</SelectItem>
-                  <SelectItem value="4">4th Year</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            
+            {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full"
+              className="w-full mt-4"
+              size="lg"
               disabled={isLoading}
             >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Account
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating Account...
+                </>
+              ) : (
+                "Create Account"
+              )}
             </Button>
-          </form>
           
-          <div className="mt-4 text-center text-sm">
-            <span className="text-muted-foreground">
-              Already have an account?{" "}
-            </span>
-            <Link
-              href="/auth/signin"
-              className="text-primary hover:underline"
-            >
-              Sign in
-            </Link>
-          </div>
+            {/* Sign in link */}
+            <div className="flex items-center justify-center mt-4 text-sm">
+              <span className="text-muted-foreground">
+                Already have an account?
+              </span>
+              <Link
+                href="/auth/signin"
+                className="ml-2 text-primary font-medium hover:underline"
+              >
+                Sign in
+              </Link>
+            </div>
+          </form>
         </CardContent>
+          </div>
+        </div>
       </Card>
     </div>
   )

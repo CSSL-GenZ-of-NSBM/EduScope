@@ -37,15 +37,14 @@ export default function HomePage() {
         <div className="academic-container">
           <div className="text-center">
             <div className="flex justify-center mb-8">
-              <div className="bg-white/10 backdrop-blur-sm p-4 rounded-full border border-white/20">
-                <Image
-                  src="/images/logo.png"
-                  alt="EduScope Logo"
-                  width={96}
-                  height={96}
-                  className="w-20 h-20 md:w-24 md:h-24"
-                />
-              </div>
+              <Image
+                src="/images/logo.png"
+                alt="EduScope Logo"
+                width={280}
+                height={280}
+                className="h-40 w-auto object-contain"
+                priority
+              />
             </div>
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
               Welcome to EduScope
@@ -54,14 +53,21 @@ export default function HomePage() {
               NSBM Green University's comprehensive research platform for research collaboration, 
               project sharing, and academic guidance.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" variant="secondary" asChild>
-                <Link href="/auth/signin">
-                  Sign In
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
+            <div className="flex flex-col sm:flex-row gap-5 justify-center">
+              <Button 
+                size="lg" 
+                variant="secondary" 
+                className="text-base py-6 px-8 font-medium shadow-lg" 
+                asChild
+              >
+                <Link href="/auth/signin">Sign In</Link>
               </Button>
-              <Button size="lg" variant="outline" asChild>
+              <Button 
+                size="lg" 
+                variant="default" 
+                className="bg-white text-nsbm-blue hover:bg-gray-100 text-base py-6 px-8 font-medium shadow-lg" 
+                asChild
+              >
                 <Link href="/auth/signup">Create Account</Link>
               </Button>
             </div>

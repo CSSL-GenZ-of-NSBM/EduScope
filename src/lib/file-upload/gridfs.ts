@@ -1,5 +1,5 @@
 import { MongoClient, GridFSBucket, ObjectId } from 'mongodb'
-import { connectDB } from '@/lib/db/mongodb'
+import { getMongoDBClient } from '@/lib/db/mongodb'
 
 export interface FileUploadResult {
   fileId: string;
@@ -22,12 +22,18 @@ class GridFSService {
 
   async initialize() {
     if (!this.bucket) {
-      this.client = await connectDB();
-      if (!this.client) {
-        throw new Error('Failed to connect to database');
+      try {
+        this.client = await getMongoDBClient();
+        if (!this.client) {
+          throw new Error('Failed to connect to database');
+        }
+        const db = this.client.db(process.env.MONGODB_DB_NAME || 'eduscope');
+        this.bucket = new GridFSBucket(db, { bucketName: 'academic_files' });
+        console.log('GridFS bucket initialized successfully');
+      } catch (error) {
+        console.error('Error initializing GridFS bucket:', error);
+        throw error;
       }
-      const db = this.client.db(process.env.MONGODB_DB_NAME || 'eduscope');
-      this.bucket = new GridFSBucket(db, { bucketName: 'academic_files' });
     }
     return this.bucket;
   }

@@ -42,17 +42,16 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href={session ? "/dashboard" : "/"} className="flex items-center space-x-3">
-              <Image
-                src="/images/logo.png"
-                alt="EduScope Logo"
-                width={40}
-                height={40}
-                className="w-8 h-8 sm:w-10 sm:h-10"
-              />
-              <div className="hidden sm:block">
-                <span className="text-xl font-bold text-nsbm-green">EduScope</span>
-                <p className="text-xs text-muted-foreground">NSBM Green University</p>
+            <Link href={session ? "/dashboard" : "/"} className="flex items-center">
+              <div className="relative">
+                <Image
+                  src="/images/logo.png"
+                  alt="EduScope Logo"
+                  width={180}
+                  height={56}
+                  className="h-10 sm:h-14 w-auto object-contain"
+                  priority
+                />
               </div>
             </Link>
           </div>

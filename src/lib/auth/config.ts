@@ -14,6 +14,7 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
+        try {
         if (!credentials?.email || !credentials?.password) {
           return null
         }
@@ -28,7 +29,9 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Please use a valid NSBM email address (@students.nsbm.ac.lk for students or @nsbm.ac.lk for staff)")
         }
 
+        console.log('Connecting to database...')
         await connectDB()
+        console.log('Connected to database, looking for user...')
         
         const user = await User.findOne({ email: credentials.email }).select('+password')
         
@@ -57,6 +60,10 @@ export const authOptions: NextAuthOptions = {
           studentId: user.studentId,
           faculty: user.faculty,
           role: user.role,
+        }
+        } catch (error: any) {
+          console.error('Auth error:', error);
+          throw new Error(error.message || "Authentication failed");
         }
       }
     })

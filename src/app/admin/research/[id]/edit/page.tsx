@@ -238,7 +238,6 @@ export default function EditResearchPaper() {
                   <SelectItem value="engineering">Engineering</SelectItem>
                   <SelectItem value="business">Business</SelectItem>
                   <SelectItem value="science">Science</SelectItem>
-                  <SelectItem value="management">Management</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -253,8 +252,7 @@ export default function EditResearchPaper() {
                   <SelectItem value="Faculty of Computing">Faculty of Computing</SelectItem>
                   <SelectItem value="Faculty of Engineering">Faculty of Engineering</SelectItem>
                   <SelectItem value="Faculty of Business">Faculty of Business</SelectItem>
-                  <SelectItem value="Faculty of Applied Sciences">Faculty of Applied Sciences</SelectItem>
-                  <SelectItem value="Faculty of Management">Faculty of Management</SelectItem>
+                  <SelectItem value="Faculty of Applied Sciences">Faculty of Sciences</SelectItem>
                 </SelectContent>
               </Select>
             </div>
