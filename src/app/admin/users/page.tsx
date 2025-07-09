@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { User, Mail, Calendar, Shield, Trash2 } from "lucide-react"
+import { User, Mail, Calendar, Shield, Trash2, Edit } from "lucide-react"
 
 interface AdminUser {
   _id: string
@@ -131,8 +131,7 @@ export default function AdminUsersPage() {
                 <SelectItem value="Faculty of Computing">Faculty of Computing</SelectItem>
                 <SelectItem value="Faculty of Engineering">Faculty of Engineering</SelectItem>
                 <SelectItem value="Faculty of Business">Faculty of Business</SelectItem>
-                <SelectItem value="Faculty of Applied Sciences">Faculty of Applied Sciences</SelectItem>
-                <SelectItem value="Faculty of Management">Faculty of Management</SelectItem>
+                <SelectItem value="Faculty of Applied Sciences">Faculty of Sciences</SelectItem>
               </SelectContent>
             </Select>
             <Button onClick={fetchUsers} variant="outline">
@@ -142,79 +141,99 @@ export default function AdminUsersPage() {
         </CardContent>
       </Card>
 
-      {/* Users List */}
-      <div className="space-y-4">
+      {/* Users Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {users.map((user) => (
-          <Card key={user._id} className="hover:shadow-md transition-shadow">
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-4 flex-1">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <User className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold">{user.name}</h3>
-                      <Badge 
-                        variant={
-                          user.role === 'admin' ? 'destructive' : 
-                          user.role === 'moderator' ? 'secondary' : 
-                          'default'
-                        }
-                        className={
-                          user.role === 'student' ? 'bg-green-100 text-green-800 hover:bg-green-200' :
-                          user.role === 'moderator' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' :
-                          ''
-                        }
-                      >
-                        {user.role}
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4" />
-                        {user.email}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Shield className="w-4 h-4" />
-                        Student ID: {user.studentId}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        {user.faculty}
-                      </div>
-                    </div>
-                    <div className="mt-2 text-xs text-gray-500">
-                      Joined: {new Date(user.createdAt).toLocaleDateString()} • 
-                      Last active: {new Date(user.updatedAt).toLocaleDateString()}
-                    </div>
-                  </div>
+          <Card key={user._id} className="hover:shadow-md transition-shadow flex flex-col">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <User className="w-6 h-6 text-blue-600" />
                 </div>
-                <div className="flex gap-2 ml-4">
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-lg leading-tight truncate" title={user.name}>
+                    {user.name}
+                  </CardTitle>
+                  <Badge 
+                    variant={
+                      user.role === 'admin' ? 'destructive' : 
+                      user.role === 'moderator' ? 'secondary' : 
+                      'default'
+                    }
+                    className={
+                      user.role === 'student' ? 'bg-green-100 text-green-800 hover:bg-green-200' :
+                      user.role === 'moderator' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' :
+                      ''
+                    }
+                  >
+                    {user.role}
+                  </Badge>
+                </div>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="flex-1 flex flex-col">
+              {/* User Details */}
+              <div className="space-y-3 text-sm text-gray-600 mb-4 flex-1">
+                <div className="flex items-center gap-2">
+                  <Mail className="w-4 h-4 flex-shrink-0" />
+                  <span className="truncate" title={user.email}>
+                    {user.email}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Shield className="w-4 h-4 flex-shrink-0" />
+                  <span className="truncate">
+                    ID: {user.studentId}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 flex-shrink-0" />
+                  <span className="truncate" title={user.faculty}>
+                    {user.faculty}
+                  </span>
+                </div>
+              </div>
+
+              {/* Timestamps */}
+              <div className="text-xs text-gray-500 mb-4 space-y-1">
+                <div>Joined: {new Date(user.createdAt).toLocaleDateString()}</div>
+                <div>Last active: {new Date(user.updatedAt).toLocaleDateString()}</div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-2">
+                <div className="flex gap-1">
                   <Button 
                     variant="outline" 
                     size="sm"
+                    className="flex-1"
                     onClick={() => router.push(`/admin/users/${user._id}`)}
+                    title="View Profile"
                   >
-                    View Profile
+                    <User className="w-3 h-3 mr-1" /> View Profile
                   </Button>
                   <Button 
                     variant="outline" 
                     size="sm"
+                    className="flex-1"
                     onClick={() => router.push(`/admin/users/${user._id}/edit`)}
+                    title="Edit User"
                   >
-                    Edit
-                  </Button>
-                  <Button 
-                    variant="destructive" 
-                    size="sm"
-                    onClick={() => handleDeleteUser(user._id, user.name)}
-                    disabled={deletingUsers.has(user._id)}
-                  >
-                    <Trash2 className="w-3 h-3 mr-1" />
-                    {deletingUsers.has(user._id) ? 'Deleting...' : 'Delete'}
+                    <Edit className="w-3 h-3 mr-1" /> Edit
                   </Button>
                 </div>
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  className="w-full"
+                  onClick={() => handleDeleteUser(user._id, user.name)}
+                  disabled={deletingUsers.has(user._id)}
+                  title="Delete User"
+                >
+                  <Trash2 className="w-3 h-3 mr-1" />
+                  {deletingUsers.has(user._id) ? 'Deleting...' : 'Delete'}
+                </Button>
               </div>
             </CardContent>
           </Card>

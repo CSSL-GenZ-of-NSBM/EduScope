@@ -260,67 +260,111 @@ export default function AdminResearchPage() {
         </CardContent>
       </Card>
 
-      {/* Papers List */}
-      <div className="space-y-4">
+      {/* Papers Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {papers.map((paper) => (
-          <Card key={paper._id} className="hover:shadow-md transition-shadow">
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-4 flex-1">
-                  <input
-                    type="checkbox"
-                    checked={selectedPapers.includes(paper._id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedPapers([...selectedPapers, paper._id])
-                      } else {
-                        setSelectedPapers(selectedPapers.filter(id => id !== paper._id))
-                      }
-                    }}
-                    className="mt-1"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold">{paper.title}</h3>
-                      {getStatusBadge(paper.status)}
-                    </div>
-                    <p className="text-gray-600 text-sm mb-3">{paper.abstract}</p>
-                    <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-                      <span>👥 {paper.authors.join(", ")}</span>
-                      <span>🎓 {paper.faculty}</span>
-                      <span>📅 {paper.year}</span>
-                      <span>📁 {paper.field}</span>
-                      <span>👤 {paper.uploadedBy.name} ({paper.uploadedBy.studentId})</span>
-                      <span>📧 {paper.uploadedBy.email}</span>
-                      <span>📥 {paper.downloadCount} downloads</span>
-                    </div>
+          <Card key={paper._id} className="hover:shadow-md transition-shadow flex flex-col">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between gap-2">
+                <input
+                  type="checkbox"
+                  checked={selectedPapers.includes(paper._id)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedPapers([...selectedPapers, paper._id])
+                    } else {
+                      setSelectedPapers(selectedPapers.filter(id => id !== paper._id))
+                    }
+                  }}
+                  className="mt-1 flex-shrink-0"
+                />
+                {getStatusBadge(paper.status)}
+              </div>
+              <CardTitle className="text-lg leading-tight line-clamp-2" title={paper.title}>
+                {paper.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col">
+              <CardDescription className="text-sm mb-4 line-clamp-3 flex-1">
+                {paper.abstract}
+              </CardDescription>
+              
+              {/* Paper Info */}
+              <div className="space-y-2 text-xs text-gray-500 mb-4">
+                <div className="flex items-center gap-1">
+                  <span>👥</span>
+                  <span className="truncate" title={paper.authors.join(", ")}>
+                    {paper.authors.join(", ")}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span>🎓</span>
+                  <span className="truncate">{paper.faculty}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center gap-1">
+                    <span>📅</span>
+                    <span>{paper.year}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span>📁</span>
+                    <span className="truncate">{paper.field}</span>
                   </div>
                 </div>
-                <div className="flex gap-2 ml-4">
+                <div className="flex items-center gap-1">
+                  <span>👤</span>
+                  <span className="truncate" title={`${paper.uploadedBy.name} (${paper.uploadedBy.studentId})`}>
+                    {paper.uploadedBy.name}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span>📧</span>
+                  <span className="truncate" title={paper.uploadedBy.email}>
+                    {paper.uploadedBy.email}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span>📥</span>
+                  <span>{paper.downloadCount} downloads</span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-2">
+                <div className="flex gap-1">
                   <Button
                     variant="outline"
                     size="sm"
+                    className="flex-1"
                     onClick={() => window.open(`/research/${paper._id}`, '_blank')}
+                    title="View"
                   >
                     <Eye className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
+                    className="flex-1"
                     onClick={() => handleDownload(paper._id, paper.fileName || `${paper.title}.pdf`)}
+                    title="Download"
                   >
                     <Download className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="outline" 
                     size="sm"
+                    className="flex-1"
                     onClick={() => router.push(`/admin/research/${paper._id}/edit`)}
+                    title="Edit"
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
+                </div>
+                
+                <div className="flex gap-1">
                   <Select onValueChange={(value) => handleStatusChange(paper._id, value)}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="Status" />
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Change Status" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="approved">
@@ -347,6 +391,7 @@ export default function AdminResearchPage() {
                     variant="destructive"
                     size="sm"
                     onClick={() => handleDelete(paper._id)}
+                    title="Delete"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
