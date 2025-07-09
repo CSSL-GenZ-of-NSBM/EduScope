@@ -17,6 +17,7 @@ interface UserProfile {
   studentId: string
   faculty: string
   role: string
+  year: number | null
   createdAt: string
   updatedAt: string
 }
@@ -34,7 +35,9 @@ export default function AdminUserEditPage() {
     email: "",
     studentId: "",
     faculty: "",
-    role: ""
+    role: "",
+    year: "",
+    newPassword: ""
   })
 
   useEffect(() => {
@@ -64,7 +67,9 @@ export default function AdminUserEditPage() {
           email: data.data.email,
           studentId: data.data.studentId,
           faculty: data.data.faculty,
-          role: data.data.role
+          role: data.data.role,
+          year: data.data.year ? data.data.year.toString() : "not-set",
+          newPassword: ""
         })
       } else {
         console.error('Failed to fetch user profile:', data.error)
@@ -81,12 +86,27 @@ export default function AdminUserEditPage() {
   const handleSave = async () => {
     setSaving(true)
     try {
+      // Prepare the data for submission
+      const updateData: any = {
+        name: formData.name,
+        email: formData.email,
+        studentId: formData.studentId,
+        faculty: formData.faculty,
+        role: formData.role,
+        year: formData.year === "not-set" ? null : parseInt(formData.year)
+      }
+
+      // Only include password if it's been changed
+      if (formData.newPassword.trim()) {
+        updateData.password = formData.newPassword
+      }
+
       const response = await fetch(`/api/admin/users/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(updateData),
       })
 
       const data = await response.json()
@@ -220,8 +240,7 @@ export default function AdminUserEditPage() {
                   <SelectItem value="Faculty of Computing">Faculty of Computing</SelectItem>
                   <SelectItem value="Faculty of Engineering">Faculty of Engineering</SelectItem>
                   <SelectItem value="Faculty of Business">Faculty of Business</SelectItem>
-                  <SelectItem value="Faculty of Applied Sciences">Faculty of Applied Sciences</SelectItem>
-                  <SelectItem value="Faculty of Management">Faculty of Management</SelectItem>
+                  <SelectItem value="Faculty of Applied Sciences">Faculty of Sciences</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -239,6 +258,43 @@ export default function AdminUserEditPage() {
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Academic Year */}
+            <div className="space-y-2">
+              <Label htmlFor="year">Academic Year</Label>
+              <Select value={formData.year} onValueChange={(value) => handleInputChange('year', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select academic year" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="not-set">Not Set</SelectItem>
+                  <SelectItem value="1">Year 1</SelectItem>
+                  <SelectItem value="2">Year 2</SelectItem>
+                  <SelectItem value="3">Year 3</SelectItem>
+                  <SelectItem value="4">Year 4</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Password Section */}
+          <div className="space-y-4">
+            <div className="border-t pt-6">
+              <h4 className="font-medium mb-4">Password Management</h4>
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">New Password</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={formData.newPassword}
+                  onChange={(e) => handleInputChange('newPassword', e.target.value)}
+                  placeholder="Leave empty to keep current password"
+                />
+                <p className="text-xs text-gray-500">
+                  Only enter a new password if you want to change the user's current password. Leave empty to keep the existing password.
+                </p>
+              </div>
             </div>
           </div>
 

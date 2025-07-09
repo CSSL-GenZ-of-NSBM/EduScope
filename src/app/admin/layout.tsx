@@ -19,7 +19,6 @@ export default function AdminLayout({
           <div className="p-6">
             <h2 className="text-xl font-bold text-gray-800">Admin Portal</h2>
             <p className="text-sm text-gray-600">EduScope Management</p>
-            <p className="text-xs text-blue-600 mt-1">Role: {userRole?.toUpperCase()}</p>
           </div>
           <nav className="mt-6">
             <a href="/admin" className="block px-6 py-3 text-gray-700 hover:bg-gray-100 border-r-2 border-transparent hover:border-blue-500">

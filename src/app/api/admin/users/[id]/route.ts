@@ -5,6 +5,7 @@ import { connectDB } from "@/lib/db/mongodb"
 import User from "@/lib/db/models/User"
 import ResearchPaper from "@/lib/db/models/ResearchPaper"
 import { ObjectId } from "mongodb"
+import bcrypt from "bcryptjs"
 
 // GET /api/admin/users/[id] - Get individual user profile
 export async function GET(
@@ -94,7 +95,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { name, email, studentId, faculty, role } = body
+    const { name, email, studentId, faculty, role, year, password } = body
 
     // Validate required fields
     if (!name || !email || !studentId || !faculty || !role) {
@@ -102,6 +103,17 @@ export async function PUT(
         success: false, 
         error: "All fields are required" 
       }, { status: 400 })
+    }
+
+    // Validate year if provided
+    if (year !== null && year !== undefined && year !== "not-set") {
+      const yearNum = parseInt(year)
+      if (isNaN(yearNum) || yearNum < 1 || yearNum > 4) {
+        return NextResponse.json({ 
+          success: false, 
+          error: "Academic year must be between 1 and 4" 
+        }, { status: 400 })
+      }
     }
 
     // Validate email format
@@ -146,17 +158,32 @@ export async function PUT(
       }, { status: 400 })
     }
 
+    // Prepare update data
+    const updateData: any = {
+      name,
+      email,
+      studentId,
+      faculty,
+      role,
+      year: year === "not-set" || year === null || year === undefined ? null : parseInt(year),
+      updatedAt: new Date()
+    }
+
+    // Hash password if provided
+    if (password && password.trim()) {
+      if (password.length < 6) {
+        return NextResponse.json({ 
+          success: false, 
+          error: "Password must be at least 6 characters long" 
+        }, { status: 400 })
+      }
+      updateData.password = await bcrypt.hash(password, 12)
+    }
+
     // Update user
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      {
-        name,
-        email,
-        studentId,
-        faculty,
-        role,
-        updatedAt: new Date()
-      },
+      updateData,
       { new: true, select: '-password' }
     )
 
