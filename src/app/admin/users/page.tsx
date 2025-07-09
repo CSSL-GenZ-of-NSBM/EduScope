@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { User, Mail, Calendar, Shield, Trash2, Edit, Eye } from "lucide-react"
+import { User, Mail, Calendar, Shield, Trash2, Edit, Eye, Plus } from "lucide-react"
 
 interface AdminUser {
   _id: string
@@ -105,9 +105,15 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold text-gray-900">Users Management</h2>
-        <p className="text-gray-600">View and manage platform users</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">Users Management</h2>
+          <p className="text-gray-600">View and manage platform users</p>
+        </div>
+        <Button onClick={() => router.push("/admin/users/create")}>
+          <Plus className="w-4 h-4 mr-2" />
+          Create User
+        </Button>
       </div>
 
       {/* Filters */}
