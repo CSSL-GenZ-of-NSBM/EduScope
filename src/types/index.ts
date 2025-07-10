@@ -13,15 +13,23 @@ export enum Faculty {
   ENGINEERING = 'Faculty of Engineering',
   BUSINESS = 'Faculty of Business',
   COMPUTING = 'Faculty of Computing',
-  SCIENCE = 'Faculty of Applied Sciences',
-  MANAGEMENT = 'Faculty of Management'
+  SCIENCE = 'Faculty of Sciences'
+}
+
+// Affiliated University Enumeration
+export enum AffiliatedUniversity {
+  NSBM = 'NSBM Green University',
+  PLYMOUTH = 'Plymouth University',
+  VICTORIA = 'Victoria University',
+  AMERICAN = 'American University'
 }
 
 // User Role Enumeration
 export enum UserRole {
   STUDENT = 'student',
-  ADMIN = 'admin',
   MODERATOR = 'moderator',
+  ADMIN = 'admin',
+  SUPER_ADMIN = 'superadmin',
   FACULTY = 'faculty'
 }
 
@@ -54,6 +62,7 @@ export interface User extends BaseDocument {
   studentId?: string;
   faculty?: Faculty;
   year?: number;
+  degree?: string; // Degree ID reference
   role: UserRole;
   isVerified: boolean;
   bio?: string;
@@ -68,9 +77,56 @@ export interface UserSchema extends BaseSchema {
   studentId?: string;
   faculty?: Faculty;
   year?: number;
+  degree?: string; // Degree ID reference
   role: UserRole;
   isVerified: boolean;
   bio?: string;
+  pendingDegreeChange?: {
+    currentDegree?: string;
+    requestedDegree: string;
+    status: 'pending' | 'approved' | 'rejected';
+    createdAt: Date;
+    reviewedBy?: string;
+    reviewedAt?: Date;
+  };
+}
+
+// Degree Module interface
+export interface DegreeModule {
+  year: number;
+  semester: number;
+  moduleName: string;
+  moduleCode: string;
+  credits: number;
+  description?: string;
+}
+
+// Degree interface for API responses
+export interface Degree extends BaseDocument {
+  degreeName: string;
+  faculty: Faculty;
+  affiliatedUniversity: AffiliatedUniversity;
+  duration: number; // in years
+  price: number; // in LKR
+  modules: DegreeModule[];
+  description?: string;
+  admissionRequirements?: string[];
+  careerPaths?: string[];
+  isActive: boolean;
+}
+
+// Degree schema interface for Mongoose (without _id)
+export interface DegreeSchema extends BaseSchema {
+  degreeName: string;
+  faculty: Faculty;
+  affiliatedUniversity: AffiliatedUniversity;
+  duration: number;
+  price: number;
+  modules: DegreeModule[];
+  description?: string;
+  admissionRequirements?: string[];
+  careerPaths?: string[];
+  isActive: boolean;
 }
 
 // Research Paper interface for API responses

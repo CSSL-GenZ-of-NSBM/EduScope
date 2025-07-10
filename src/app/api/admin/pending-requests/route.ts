@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    if (session.user.role !== 'admin' && session.user.role !== 'moderator') {
+    if (session.user.role !== 'admin' && session.user.role !== 'moderator' && session.user.role !== 'superadmin') {
       return NextResponse.json(
         { success: false, error: "Access denied" },
         { status: 403 }

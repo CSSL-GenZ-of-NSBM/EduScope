@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DeleteDialog } from "@/components/ui/delete-dialog"
+import { useToast } from "@/components/ui/toast"
 import { 
   CheckCircle, 
   XCircle, 
@@ -34,19 +36,30 @@ export default function AdminResearchPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { addToast } = useToast()
   const [papers, setPapers] = useState<AdminResearchPaper[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'all')
   const [selectedPapers, setSelectedPapers] = useState<string[]>([])
+  const [deleting, setDeleting] = useState<string | null>(null)
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean
+    paperId: string
+    paperTitle: string
+  }>({
+    open: false,
+    paperId: "",
+    paperTitle: ""
+  })
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/auth/signin")
     } else if (status === "authenticated") {
-      // Check if user is admin or moderator
+      // Check if user is admin, superadmin, or moderator
       const userRole = session?.user?.role
-      if (!userRole || (userRole !== 'admin' && userRole !== 'moderator')) {
+      if (!userRole || !['admin', 'superadmin', 'moderator'].includes(userRole)) {
         router.push("/dashboard")
         return
       }
@@ -115,19 +128,51 @@ export default function AdminResearchPage() {
     }
   }
 
-  const handleDelete = async (paperId: string) => {
-    if (!confirm('Are you sure you want to delete this research paper?')) return
+  const handleDelete = async (paperId: string, paperTitle: string) => {
+    setDeleteDialog({
+      open: true,
+      paperId,
+      paperTitle
+    })
+  }
+
+  const confirmDelete = async () => {
+    const { paperId, paperTitle } = deleteDialog
+    if (!paperId) return
+
+    setDeleting(paperId)
+    setDeleteDialog({ open: false, paperId: "", paperTitle: "" })
 
     try {
       const response = await fetch(`/api/admin/research/${paperId}`, {
         method: 'DELETE'
       })
 
-      if (response.ok) {
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        addToast({
+          title: "Research paper deleted",
+          description: `"${paperTitle}" has been permanently deleted.`,
+          variant: "success"
+        })
         fetchPapers()
+      } else {
+        addToast({
+          title: "Failed to delete paper",
+          description: data.error || "An unexpected error occurred",
+          variant: "error"
+        })
       }
     } catch (error) {
       console.error('Failed to delete paper:', error)
+      addToast({
+        title: "Failed to delete paper",
+        description: "An unexpected error occurred while deleting the paper.",
+        variant: "error"
+      })
+    } finally {
+      setDeleting(null)
     }
   }
 
@@ -175,7 +220,11 @@ export default function AdminResearchPage() {
       
     } catch (error) {
       console.error('Download error:', error)
-      alert('Failed to download file. Please try again.')
+      addToast({
+        title: "Download failed",
+        description: "Failed to download file. Please try again.",
+        variant: "error"
+      })
     }
   }
 
@@ -260,67 +309,111 @@ export default function AdminResearchPage() {
         </CardContent>
       </Card>
 
-      {/* Papers List */}
-      <div className="space-y-4">
+      {/* Papers Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {papers.map((paper) => (
-          <Card key={paper._id} className="hover:shadow-md transition-shadow">
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-4 flex-1">
-                  <input
-                    type="checkbox"
-                    checked={selectedPapers.includes(paper._id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedPapers([...selectedPapers, paper._id])
-                      } else {
-                        setSelectedPapers(selectedPapers.filter(id => id !== paper._id))
-                      }
-                    }}
-                    className="mt-1"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold">{paper.title}</h3>
-                      {getStatusBadge(paper.status)}
-                    </div>
-                    <p className="text-gray-600 text-sm mb-3">{paper.abstract}</p>
-                    <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-                      <span>👥 {paper.authors.join(", ")}</span>
-                      <span>🎓 {paper.faculty}</span>
-                      <span>📅 {paper.year}</span>
-                      <span>📁 {paper.field}</span>
-                      <span>👤 {paper.uploadedBy.name} ({paper.uploadedBy.studentId})</span>
-                      <span>📧 {paper.uploadedBy.email}</span>
-                      <span>📥 {paper.downloadCount} downloads</span>
-                    </div>
+          <Card key={paper._id} className="hover:shadow-md transition-shadow flex flex-col">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between gap-2">
+                <input
+                  type="checkbox"
+                  checked={selectedPapers.includes(paper._id)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedPapers([...selectedPapers, paper._id])
+                    } else {
+                      setSelectedPapers(selectedPapers.filter(id => id !== paper._id))
+                    }
+                  }}
+                  className="mt-1 flex-shrink-0"
+                />
+                {getStatusBadge(paper.status)}
+              </div>
+              <CardTitle className="text-lg leading-tight line-clamp-2" title={paper.title}>
+                {paper.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col">
+              <CardDescription className="text-sm mb-4 line-clamp-3 flex-1">
+                {paper.abstract}
+              </CardDescription>
+              
+              {/* Paper Info */}
+              <div className="space-y-2 text-xs text-gray-500 mb-4">
+                <div className="flex items-center gap-1">
+                  <span>👥</span>
+                  <span className="truncate" title={paper.authors.join(", ")}>
+                    {paper.authors.join(", ")}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span>🎓</span>
+                  <span className="truncate">{paper.faculty}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center gap-1">
+                    <span>📅</span>
+                    <span>{paper.year}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span>📁</span>
+                    <span className="truncate">{paper.field}</span>
                   </div>
                 </div>
-                <div className="flex gap-2 ml-4">
+                <div className="flex items-center gap-1">
+                  <span>👤</span>
+                  <span className="truncate" title={`${paper.uploadedBy.name} (${paper.uploadedBy.studentId})`}>
+                    {paper.uploadedBy.name}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span>📧</span>
+                  <span className="truncate" title={paper.uploadedBy.email}>
+                    {paper.uploadedBy.email}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span>📥</span>
+                  <span>{paper.downloadCount} downloads</span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-2">
+                <div className="flex gap-1">
                   <Button
                     variant="outline"
                     size="sm"
+                    className="flex-1"
                     onClick={() => window.open(`/research/${paper._id}`, '_blank')}
+                    title="View"
                   >
                     <Eye className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
+                    className="flex-1"
                     onClick={() => handleDownload(paper._id, paper.fileName || `${paper.title}.pdf`)}
+                    title="Download"
                   >
                     <Download className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="outline" 
                     size="sm"
+                    className="flex-1"
                     onClick={() => router.push(`/admin/research/${paper._id}/edit`)}
+                    title="Edit"
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
+                </div>
+                
+                <div className="flex gap-1">
                   <Select onValueChange={(value) => handleStatusChange(paper._id, value)}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="Status" />
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Change Status" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="approved">
@@ -346,7 +439,9 @@ export default function AdminResearchPage() {
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => handleDelete(paper._id)}
+                    onClick={() => handleDelete(paper._id, paper.title)}
+                    disabled={deleting === paper._id}
+                    title="Delete"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -366,6 +461,16 @@ export default function AdminResearchPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}
+        title={deleteDialog.paperTitle}
+        description="This will permanently delete the research paper and all its associated data. This action cannot be undone."
+        onConfirm={confirmDelete}
+        loading={deleting === deleteDialog.paperId}
+      />
     </div>
   )
 }

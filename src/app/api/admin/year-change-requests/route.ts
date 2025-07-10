@@ -19,8 +19,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Check if user is admin or moderator
-    if (session.user.role !== UserRole.ADMIN && session.user.role !== UserRole.MODERATOR) {
+    // Check if user is admin, moderator, or super admin
+    if (session.user.role !== UserRole.ADMIN && session.user.role !== UserRole.MODERATOR && session.user.role !== UserRole.SUPER_ADMIN) {
       return NextResponse.json(
         { error: 'Insufficient permissions' },
         { status: 403 }

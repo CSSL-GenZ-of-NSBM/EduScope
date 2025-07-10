@@ -30,6 +30,14 @@ const users = [
     role: 'admin',
     studentId: 'ADM001',
     faculty: 'Faculty of Computing'
+  },
+  {
+    name: 'Super Admin',
+    email: 'superadmin@nsbm.ac.lk',
+    password: 'SuperAdmin@123',
+    role: 'superadmin',
+    studentId: 'SADM001',
+    faculty: 'Faculty of Computing'
   }
 ];
 
@@ -76,7 +84,9 @@ async function setupUsers() {
     console.log('📧 student@students.nsbm.ac.lk (Password: Test@123) - Role: student');
     console.log('📧 moderator@nsbm.ac.lk (Password: Test@123) - Role: moderator');
     console.log('📧 admin@nsbm.ac.lk (Password: Test@123) - Role: admin');
+    console.log('📧 superadmin@nsbm.ac.lk (Password: SuperAdmin@123) - Role: superadmin');
     console.log('\nNote: Students use @students.nsbm.ac.lk, Staff use @nsbm.ac.lk');
+    console.log('\n⚠️  IMPORTANT: The super admin has full system access. Keep credentials secure!');
     
   } catch (error) {
     console.error('❌ Error setting up users:', error);

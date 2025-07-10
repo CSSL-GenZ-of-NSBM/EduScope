@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2 } from "lucide-react"
+import { Degree } from "@/types"
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -21,11 +22,30 @@ export default function SignUp() {
     studentId: "",
     faculty: "",
     year: "",
+    degree: "",
   })
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [degrees, setDegrees] = useState<Degree[]>([])
   const router = useRouter()
+
+  // Fetch degrees when component mounts
+  useEffect(() => {
+    const fetchDegrees = async () => {
+      try {
+        const response = await fetch("/api/degrees") // We'll need to create a public endpoint
+        const data = await response.json()
+        if (data.success) {
+          setDegrees(data.data || [])
+        }
+      } catch (error) {
+        console.error("Failed to fetch degrees:", error)
+      }
+    }
+
+    fetchDegrees()
+  }, [])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -61,7 +81,8 @@ export default function SignUp() {
           password: formData.password,
           studentId: formData.studentId,
           faculty: formData.faculty,
-          year: parseInt(formData.year),
+          year: formData.year ? parseInt(formData.year) : null,
+          degree: formData.degree || null,
         }),
       })
 
@@ -223,6 +244,25 @@ export default function SignUp() {
                     <SelectItem value="2">2nd Year</SelectItem>
                     <SelectItem value="3">3rd Year</SelectItem>
                     <SelectItem value="4">4th Year</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="degree" className="text-sm font-medium">Degree Programme</Label>
+                <Select 
+                  onValueChange={(value: string) => handleSelectChange("degree", value)}
+                  value={formData.degree}
+                >
+                  <SelectTrigger id="degree" className="h-11">
+                    <SelectValue placeholder="Select your degree programme" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {degrees.map((degree) => (
+                      <SelectItem key={degree._id} value={degree._id}>
+                        {degree.degreeName}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import { useToast } from "@/components/ui/toast"
 import { ArrowLeft, Save, Download, Eye } from "lucide-react"
 import { ResearchPaper } from "@/types"
 
@@ -17,6 +18,7 @@ export default function EditResearchPaper() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const params = useParams()
+  const { addToast } = useToast()
   const paperId = params.id as string
 
   const [paper, setPaper] = useState<ResearchPaper | null>(null)
@@ -39,7 +41,7 @@ export default function EditResearchPaper() {
       router.push("/auth/signin")
     } else if (status === "authenticated") {
       const userRole = session?.user?.role
-      if (!userRole || (userRole !== 'admin' && userRole !== 'moderator')) {
+      if (!userRole || !['admin', 'superadmin', 'moderator'].includes(userRole)) {
         router.push("/dashboard")
         return
       }
@@ -84,14 +86,29 @@ export default function EditResearchPaper() {
         body: JSON.stringify(formData)
       })
 
-      if (response.ok) {
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        addToast({
+          title: "Paper updated successfully",
+          description: "The research paper has been updated.",
+          variant: "success"
+        })
         router.push('/admin/research')
       } else {
-        alert('Failed to update paper')
+        addToast({
+          title: "Failed to update paper",
+          description: data.error || "An unexpected error occurred",
+          variant: "error"
+        })
       }
     } catch (error) {
       console.error('Failed to save paper:', error)
-      alert('Failed to update paper')
+      addToast({
+        title: "Failed to update paper",
+        description: "An unexpected error occurred while updating the paper.",
+        variant: "error"
+      })
     } finally {
       setSaving(false)
     }

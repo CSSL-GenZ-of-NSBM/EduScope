@@ -16,9 +16,9 @@ export async function GET(request: NextRequest) {
     }
 
     const userRole = token.role
-    if (!userRole || (userRole !== 'admin' && userRole !== 'moderator')) {
+    if (!userRole || !['admin', 'superadmin', 'moderator'].includes(userRole)) {
       return NextResponse.json(
-        { success: false, error: 'Admin or moderator access required' },
+        { success: false, error: 'Admin, superadmin, or moderator access required' },
         { status: 403 }
       )
     }
@@ -79,6 +79,19 @@ export async function GET(request: NextRequest) {
       }
     ])
 
+    // Request stats
+    const degreeChangeRequests = await User.countDocuments({
+      'pendingDegreeChange.status': 'pending'
+    })
+
+    const yearChangeRequests = await User.countDocuments({
+      'pendingYearChange.status': 'pending'
+    })
+
+    const accountDeletionRequests = await User.countDocuments({
+      'pendingAccountDeletion': true
+    })
+
     const stats = {
       research,
       ideas: {
@@ -93,6 +106,11 @@ export async function GET(request: NextRequest) {
       downloads: {
         total: downloadStats[0]?.totalDownloads || 0,
         thisMonth: thisMonthDownloads[0]?.downloads || 0
+      },
+      requests: {
+        degreeChanges: degreeChangeRequests,
+        yearChanges: yearChangeRequests,
+        accountDeletions: accountDeletionRequests
       }
     }
 

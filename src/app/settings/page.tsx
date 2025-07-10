@@ -10,8 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Faculty, UserRole } from "@/types"
-import { AlertCircle, Check, Lock, User, Trash2 } from "lucide-react"
+import { Faculty, UserRole, Degree } from "@/types"
+import { AlertCircle, Check, Lock, User, Trash2, GraduationCap } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/components/ui/toast"
 
@@ -23,6 +23,7 @@ interface UserProfile {
   studentId: string;
   faculty: string;
   year?: number | null;
+  degree?: string | null;
   role: string;
 }
 
@@ -35,19 +36,32 @@ interface PendingYearChangeRequest {
   status: string;
 }
 
+// Pending degree change request interface
+interface PendingDegreeChangeRequest {
+  id: string;
+  currentDegree: string;
+  requestedDegree: string;
+  createdAt: string;
+  status: string;
+}
+
 export default function SettingsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [loading, setLoading] = useState<{[key: string]: boolean}>({})
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [pendingYearRequest, setPendingYearRequest] = useState<PendingYearChangeRequest | null>(null)
+  const [pendingDegreeRequest, setPendingDegreeRequest] = useState<PendingDegreeChangeRequest | null>(null)
+  const [degrees, setDegrees] = useState<Degree[]>([])
+  const [userDegree, setUserDegree] = useState<Degree | null>(null)
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: ""
   })
   const [profileData, setProfileData] = useState({
-    academicYear: ""
+    academicYear: "",
+    degree: ""
   })
   const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false)
   const [deleteAccountText, setDeleteAccountText] = useState("")
@@ -64,7 +78,8 @@ export default function SettingsPage() {
             const profile = await response.json()
             setUserProfile(profile)
             setProfileData({
-              academicYear: ""  // Initialize with empty string so user has to make a selection
+              academicYear: "",  // Initialize with empty string so user has to make a selection
+              degree: ""
             })
           } else {
             console.error('Failed to fetch user profile')
@@ -95,9 +110,51 @@ export default function SettingsPage() {
       }
     }
 
+    const fetchDegrees = async () => {
+      try {
+        const response = await fetch('/api/degrees')
+        const data = await response.json()
+        if (data.success) {
+          setDegrees(data.data || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch degrees:', error)
+      }
+    }
+
+    const fetchPendingDegreeChangeRequest = async () => {
+      if (status === "authenticated") {
+        try {
+          const response = await fetch('/api/user/pending-degree-change')
+          if (response.ok) {
+            const data = await response.json()
+            if (data.hasPendingRequest) {
+              setPendingDegreeRequest(data.request)
+            } else {
+              setPendingDegreeRequest(null)
+            }
+          } else {
+            console.error('Failed to fetch pending degree change request')
+          }
+        } catch (error) {
+          console.error('Error fetching pending degree change request:', error)
+        }
+      }
+    }
+
     fetchUserProfile()
     fetchPendingYearChangeRequest()
+    fetchDegrees()
+    fetchPendingDegreeChangeRequest()
   }, [status])
+
+  // Find user's degree when both user and degrees are loaded
+  useEffect(() => {
+    if (userProfile && userProfile.degree && degrees.length > 0) {
+      const degree = degrees.find(d => d._id === userProfile.degree)
+      setUserDegree(degree || null)
+    }
+  }, [userProfile, degrees])
 
   if (status === "loading" || !userProfile) {
     return (
@@ -200,7 +257,7 @@ export default function SettingsPage() {
       }
 
       // Reset the form
-      setProfileData({ academicYear: "" })
+      setProfileData({ academicYear: "", degree: "" })
 
       // Refresh pending requests to show the new request
       const pendingResponse = await fetch('/api/user/pending-year-change')
@@ -220,6 +277,66 @@ export default function SettingsPage() {
       setUpdateError(error.message)
     } finally {
       setLoading({ academicYear: false })
+    }
+  }
+
+  const handleDegreeChange = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading({ degree: true })
+    setUpdateError(null)
+
+    // Check if there's already a pending request (frontend validation)
+    if (pendingDegreeRequest) {
+      setUpdateError("You already have a pending degree change request. Please wait for it to be reviewed.")
+      setLoading({ degree: false })
+      return
+    }
+
+    // Validate that the requested degree is different from current degree
+    if (userProfile?.degree && profileData.degree === userProfile.degree) {
+      setUpdateError("You cannot request a change to your current degree programme")
+      setLoading({ degree: false })
+      return
+    }
+
+    try {
+      const response = await fetch('/api/user/degree-change', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          newDegree: profileData.degree
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to request degree change")
+      }
+
+      // Reset the form
+      setProfileData(prev => ({ ...prev, degree: "" }))
+
+      // Refresh pending requests to show the new request
+      const pendingResponse = await fetch('/api/user/pending-degree-change')
+      if (pendingResponse.ok) {
+        const pendingData = await pendingResponse.json()
+        if (pendingData.hasPendingRequest) {
+          setPendingDegreeRequest(pendingData.request)
+        }
+      }
+
+      addToast({
+        title: "Request Submitted",
+        description: "Your degree change request has been submitted for approval",
+        variant: "success"
+      })
+    } catch (error: any) {
+      setUpdateError(error.message)
+    } finally {
+      setLoading({ degree: false })
     }
   }
 
@@ -308,6 +425,21 @@ export default function SettingsPage() {
                 </div>
               </div>
               
+              {/* Degree Information */}
+              {userProfile?.degree && (
+                <div className="border rounded-lg p-4 mt-4">
+                  <h3 className="text-lg font-medium mb-2">Degree Programme</h3>
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <GraduationCap className="h-4 w-4" />
+                    <span>Currently enrolled in: </span>
+                    <span className="font-medium text-gray-900">{userDegree ? userDegree.degreeName : 'Loading...'}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Visit the Class Calculator to view your modules and subjects.
+                  </p>
+                </div>
+              )}
+              
               {/* Academic Year Change Request */}
               <div className="border rounded-lg p-4 mt-6">
                 <h3 className="text-lg font-medium mb-2">Request Academic Year Change</h3>
@@ -378,6 +510,62 @@ export default function SettingsPage() {
                       </div>
                       <Button type="submit" disabled={loading.academicYear || !profileData.academicYear}>
                         {loading.academicYear ? "Submitting..." : "Request Change"}
+                      </Button>
+                    </div>
+                  </form>
+                )}
+              </div>
+
+              {/* Degree Change Request */}
+              <div className="border rounded-lg p-4 mt-6">
+                <h3 className="text-lg font-medium mb-2">Request Degree Programme Change</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Your current degree programme is: {userDegree ? userDegree.degreeName : (userProfile?.degree ? 'Loading...' : "Not set")}. 
+                  Changes require approval from a moderator or admin.
+                </p>
+                
+                {/* Show pending request if exists */}
+                {pendingDegreeRequest ? (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertCircle className="h-4 w-4 text-yellow-600" />
+                      <h4 className="font-medium text-yellow-800">Pending Degree Change Request</h4>
+                    </div>
+                    <p className="text-sm text-yellow-700 mb-2">
+                      You have a pending request to change your degree programme.
+                    </p>
+                    <p className="text-xs text-yellow-600">
+                      Submitted on: {new Date(pendingDegreeRequest.createdAt).toLocaleDateString()}
+                    </p>
+                    <p className="text-xs text-yellow-600 mt-1">
+                      Please wait for an admin or moderator to review your request before submitting a new one.
+                    </p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleDegreeChange}>
+                    <div className="grid gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="degree">New Degree Programme</Label>
+                        <Select 
+                          value={profileData.degree}
+                          onValueChange={(value) => 
+                            setProfileData(prev => ({ ...prev, degree: value }))
+                          }
+                        >
+                          <SelectTrigger id="degree">
+                            <SelectValue placeholder="Select a new degree programme" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {degrees.filter(degree => degree._id !== userProfile?.degree).map((degree) => (
+                              <SelectItem key={degree._id} value={degree._id}>
+                                {degree.degreeName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button type="submit" disabled={loading.degree || !profileData.degree}>
+                        {loading.degree ? "Submitting..." : "Request Change"}
                       </Button>
                     </div>
                   </form>

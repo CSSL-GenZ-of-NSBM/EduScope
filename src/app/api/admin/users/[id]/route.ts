@@ -5,6 +5,7 @@ import { connectDB } from "@/lib/db/mongodb"
 import User from "@/lib/db/models/User"
 import ResearchPaper from "@/lib/db/models/ResearchPaper"
 import { ObjectId } from "mongodb"
+import bcrypt from "bcryptjs"
 
 // GET /api/admin/users/[id] - Get individual user profile
 export async function GET(
@@ -14,7 +15,7 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session?.user?.role || session.user.role !== 'admin') {
+    if (!session?.user?.role || !['admin', 'superadmin'].includes(session.user.role)) {
       return NextResponse.json({ 
         success: false, 
         error: "Access denied. Admin role required." 
@@ -76,7 +77,7 @@ export async function PUT(
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session?.user?.role || session.user.role !== 'admin') {
+    if (!session?.user?.role || !['admin', 'superadmin'].includes(session.user.role)) {
       return NextResponse.json({ 
         success: false, 
         error: "Access denied. Admin role required." 
@@ -93,8 +94,30 @@ export async function PUT(
       }, { status: 400 })
     }
 
+    // Get the target user to check their role
+    const targetUser = await User.findById(userId)
+    if (!targetUser) {
+      return NextResponse.json({ 
+        success: false, 
+        error: "User not found" 
+      }, { status: 404 })
+    }
+
+    // Role hierarchy authorization check
+    const currentUserRole = session.user.role
+    const targetUserRole = targetUser.role
+
+    // Super admin can update anyone
+    // Regular admin cannot update other admins or super admins
+    if (currentUserRole === 'admin' && ['admin', 'superadmin'].includes(targetUserRole)) {
+      return NextResponse.json({ 
+        success: false, 
+        error: "Access denied. Cannot modify admin or super admin accounts." 
+      }, { status: 403 })
+    }
+
     const body = await request.json()
-    const { name, email, studentId, faculty, role } = body
+    const { name, email, studentId, faculty, role, year, degree, password } = body
 
     // Validate required fields
     if (!name || !email || !studentId || !faculty || !role) {
@@ -102,6 +125,42 @@ export async function PUT(
         success: false, 
         error: "All fields are required" 
       }, { status: 400 })
+    }
+
+    // Role validation based on current user's permissions
+    let validRoles = ['student', 'moderator']
+    if (currentUserRole === 'superadmin') {
+      // Super admin can assign any role including admin and superadmin
+      validRoles = ['student', 'moderator', 'admin', 'superadmin']
+    } else if (currentUserRole === 'admin') {
+      // Regular admin can assign student, moderator, and admin roles
+      validRoles = ['student', 'moderator', 'admin']
+    }
+
+    if (!validRoles.includes(role)) {
+      return NextResponse.json({ 
+        success: false, 
+        error: `Invalid role. Available roles: ${validRoles.join(', ')}` 
+      }, { status: 400 })
+    }
+
+    // Prevent non-super-admins from creating/updating to super admin
+    if (role === 'superadmin' && currentUserRole !== 'superadmin') {
+      return NextResponse.json({ 
+        success: false, 
+        error: "Only super admin can assign super admin role" 
+      }, { status: 403 })
+    }
+
+    // Validate year if provided
+    if (year !== null && year !== undefined && year !== "not-set") {
+      const yearNum = parseInt(year)
+      if (isNaN(yearNum) || yearNum < 1 || yearNum > 4) {
+        return NextResponse.json({ 
+          success: false, 
+          error: "Academic year must be between 1 and 4" 
+        }, { status: 400 })
+      }
     }
 
     // Validate email format
@@ -114,13 +173,7 @@ export async function PUT(
     }
 
     // Validate role
-    const validRoles = ['student', 'moderator', 'admin']
-    if (!validRoles.includes(role)) {
-      return NextResponse.json({ 
-        success: false, 
-        error: "Invalid role" 
-      }, { status: 400 })
-    }
+    // (Role validation moved above with authorization check)
 
     // Check if email is already taken by another user
     const existingUser = await User.findOne({ 
@@ -146,17 +199,33 @@ export async function PUT(
       }, { status: 400 })
     }
 
+    // Prepare update data
+    const updateData: any = {
+      name,
+      email,
+      studentId,
+      faculty,
+      role,
+      year: year === "not-set" || year === null || year === undefined ? null : parseInt(year),
+      degree: degree === "not-set" || degree === null || degree === undefined ? null : degree,
+      updatedAt: new Date()
+    }
+
+    // Hash password if provided
+    if (password && password.trim()) {
+      if (password.length < 6) {
+        return NextResponse.json({ 
+          success: false, 
+          error: "Password must be at least 6 characters long" 
+        }, { status: 400 })
+      }
+      updateData.password = await bcrypt.hash(password, 12)
+    }
+
     // Update user
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      {
-        name,
-        email,
-        studentId,
-        faculty,
-        role,
-        updatedAt: new Date()
-      },
+      updateData,
       { new: true, select: '-password' }
     )
 
@@ -190,7 +259,7 @@ export async function DELETE(
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session?.user?.role || session.user.role !== 'admin') {
+    if (!session?.user?.role || !['admin', 'superadmin'].includes(session.user.role)) {
       return NextResponse.json({ 
         success: false, 
         error: "Access denied. Admin role required." 
@@ -213,6 +282,27 @@ export async function DELETE(
         success: false, 
         error: "Cannot delete your own account" 
       }, { status: 400 })
+    }
+
+    // Get the target user to check their role
+    const targetUser = await User.findById(userId)
+    if (!targetUser) {
+      return NextResponse.json({ 
+        success: false, 
+        error: "User not found" 
+      }, { status: 404 })
+    }
+
+    // Role hierarchy authorization check for deletion
+    const currentUserRole = session.user.role
+    const targetUserRole = targetUser.role
+
+    // Regular admin cannot delete other admins or super admins
+    if (currentUserRole === 'admin' && ['admin', 'superadmin'].includes(targetUserRole)) {
+      return NextResponse.json({ 
+        success: false, 
+        error: "Access denied. Cannot delete admin or super admin accounts." 
+      }, { status: 403 })
     }
 
     // Delete user

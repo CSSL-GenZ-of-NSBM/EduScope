@@ -17,9 +17,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     const userRole = token.role
-    if (!userRole || (userRole !== 'admin' && userRole !== 'moderator')) {
+    if (!userRole || !['admin', 'superadmin', 'moderator'].includes(userRole)) {
       return NextResponse.json(
-        { success: false, error: 'Admin or moderator access required' },
+        { success: false, error: 'Admin, superadmin, or moderator access required' },
         { status: 403 }
       )
     }
@@ -69,9 +69,9 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     }
 
     const userRole = token.role
-    if (!userRole || (userRole !== 'admin' && userRole !== 'moderator')) {
+    if (!userRole || !['admin', 'superadmin', 'moderator'].includes(userRole)) {
       return NextResponse.json(
-        { success: false, error: 'Admin or moderator access required' },
+        { success: false, error: 'Admin, superadmin, or moderator access required' },
         { status: 403 }
       )
     }
