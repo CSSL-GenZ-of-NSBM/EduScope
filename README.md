@@ -82,11 +82,19 @@ cd Desktop/EduScope
 node scripts/setup-users.js
 ```
 
-### Step 4: Access the Application
+### Step 4: Set Up Initial Mock Degree
+```bash
+# 1. Stay on the same terminal window that was used in the previous step
+
+# 2. Run the degree seed script
+node scripts/seed-degrees.js
+```
+
+### Step 5: Access the Application
 - **Main App**: http://localhost:3000
 - **Database Admin**: http://localhost:8081 (username: admin, password: admin123)
 
-### Step 5: Test Login
+### Step 6: Test Login
 Use one of these test accounts:
 - **Admin**: admin@students.nsbm.ac.lk / password123
 - **Student**: student@students.nsbm.ac.lk / password123
