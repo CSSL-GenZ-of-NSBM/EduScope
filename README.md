@@ -4,6 +4,8 @@
 
 > **New to coding?** Don't worry! This guide will walk you through everything step-by-step. No prior experience required! 🚀
 
+> **Note:** *Only NSBM students are allowed to contribute to this project for now.*
+
 ## 🎯 What is EduScope?
 
 EduScope is like a "Facebook for student research" where NSBM students can:
