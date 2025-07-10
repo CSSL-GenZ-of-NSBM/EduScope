@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DeleteDialog } from "@/components/ui/delete-dialog"
+import { useToast } from "@/components/ui/toast"
 import { 
   CheckCircle, 
   XCircle, 
@@ -34,11 +36,22 @@ export default function AdminResearchPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { addToast } = useToast()
   const [papers, setPapers] = useState<AdminResearchPaper[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'all')
   const [selectedPapers, setSelectedPapers] = useState<string[]>([])
+  const [deleting, setDeleting] = useState<string | null>(null)
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean
+    paperId: string
+    paperTitle: string
+  }>({
+    open: false,
+    paperId: "",
+    paperTitle: ""
+  })
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -115,19 +128,51 @@ export default function AdminResearchPage() {
     }
   }
 
-  const handleDelete = async (paperId: string) => {
-    if (!confirm('Are you sure you want to delete this research paper?')) return
+  const handleDelete = async (paperId: string, paperTitle: string) => {
+    setDeleteDialog({
+      open: true,
+      paperId,
+      paperTitle
+    })
+  }
+
+  const confirmDelete = async () => {
+    const { paperId, paperTitle } = deleteDialog
+    if (!paperId) return
+
+    setDeleting(paperId)
+    setDeleteDialog({ open: false, paperId: "", paperTitle: "" })
 
     try {
       const response = await fetch(`/api/admin/research/${paperId}`, {
         method: 'DELETE'
       })
 
-      if (response.ok) {
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        addToast({
+          title: "Research paper deleted",
+          description: `"${paperTitle}" has been permanently deleted.`,
+          variant: "success"
+        })
         fetchPapers()
+      } else {
+        addToast({
+          title: "Failed to delete paper",
+          description: data.error || "An unexpected error occurred",
+          variant: "error"
+        })
       }
     } catch (error) {
       console.error('Failed to delete paper:', error)
+      addToast({
+        title: "Failed to delete paper",
+        description: "An unexpected error occurred while deleting the paper.",
+        variant: "error"
+      })
+    } finally {
+      setDeleting(null)
     }
   }
 
@@ -175,7 +220,11 @@ export default function AdminResearchPage() {
       
     } catch (error) {
       console.error('Download error:', error)
-      alert('Failed to download file. Please try again.')
+      addToast({
+        title: "Download failed",
+        description: "Failed to download file. Please try again.",
+        variant: "error"
+      })
     }
   }
 
@@ -390,7 +439,8 @@ export default function AdminResearchPage() {
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => handleDelete(paper._id)}
+                    onClick={() => handleDelete(paper._id, paper.title)}
+                    disabled={deleting === paper._id}
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -411,6 +461,16 @@ export default function AdminResearchPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}
+        title={deleteDialog.paperTitle}
+        description="This will permanently delete the research paper and all its associated data. This action cannot be undone."
+        onConfirm={confirmDelete}
+        loading={deleting === deleteDialog.paperId}
+      />
     </div>
   )
 }

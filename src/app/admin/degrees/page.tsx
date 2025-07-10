@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DeleteDialog } from "@/components/ui/delete-dialog"
+import { useToast } from "@/components/ui/toast"
 import { 
   GraduationCap, 
   University, 
@@ -25,12 +27,22 @@ import { Degree, Faculty, AffiliatedUniversity } from "@/types"
 export default function AdminDegreesPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { addToast } = useToast()
   const [degrees, setDegrees] = useState<Degree[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [facultyFilter, setFacultyFilter] = useState("all")
   const [universityFilter, setUniversityFilter] = useState("all")
   const [deletingDegrees, setDeletingDegrees] = useState<Set<string>>(new Set())
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean
+    degreeId: string
+    degreeName: string
+  }>({
+    open: false,
+    degreeId: "",
+    degreeName: ""
+  })
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -69,12 +81,21 @@ export default function AdminDegreesPage() {
     }
   }
 
-  const handleDeleteDegree = async (degreeId: string) => {
-    if (!confirm('Are you sure you want to delete this degree? This action cannot be undone.')) {
-      return
-    }
+  const handleDeleteDegree = async (degreeId: string, degreeName: string) => {
+    setDeleteDialog({
+      open: true,
+      degreeId,
+      degreeName
+    })
+  }
+
+  const confirmDeleteDegree = async () => {
+    const { degreeId, degreeName } = deleteDialog
+    if (!degreeId) return
 
     setDeletingDegrees(prev => new Set(prev).add(degreeId))
+    setDeleteDialog({ open: false, degreeId: "", degreeName: "" })
+
     try {
       const response = await fetch(`/api/admin/degrees/${degreeId}`, {
         method: 'DELETE'
@@ -83,13 +104,26 @@ export default function AdminDegreesPage() {
       const data = await response.json()
       if (data.success) {
         setDegrees(prev => prev.filter(degree => degree._id !== degreeId))
+        addToast({
+          title: "Degree deleted successfully",
+          description: `"${degreeName}" has been permanently deleted.`,
+          variant: "success"
+        })
       } else {
         console.error('Failed to delete degree:', data.error)
-        alert('Failed to delete degree: ' + data.error)
+        addToast({
+          title: "Failed to delete degree",
+          description: data.error || "An unexpected error occurred",
+          variant: "error"
+        })
       }
     } catch (error) {
       console.error('Failed to delete degree:', error)
-      alert('Failed to delete degree')
+      addToast({
+        title: "Failed to delete degree",
+        description: "An unexpected error occurred while deleting the degree.",
+        variant: "error"
+      })
     } finally {
       setDeletingDegrees(prev => {
         const newSet = new Set(prev)
@@ -253,7 +287,7 @@ export default function AdminDegreesPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleDeleteDegree(degree._id)}
+                    onClick={() => handleDeleteDegree(degree._id, degree.degreeName)}
                     disabled={deletingDegrees.has(degree._id)}
                     className="text-red-600 hover:text-red-700"
                   >
@@ -281,6 +315,16 @@ export default function AdminDegreesPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}
+        title={deleteDialog.degreeName}
+        description="This will permanently delete the degree program and all its associated data. This action cannot be undone."
+        onConfirm={confirmDeleteDegree}
+        loading={deletingDegrees.has(deleteDialog.degreeId)}
+      />
     </div>
   )
 }
