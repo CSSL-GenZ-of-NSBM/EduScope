@@ -15,7 +15,8 @@ import {
   LogOut,
   User,
   Shield,
-  Bookmark
+  Bookmark,
+  Calculator
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -29,6 +30,7 @@ import {
 const navigation = [
   { name: 'Research', href: '/research', icon: BookOpen },
   { name: 'Ideas', href: '/ideas', icon: Lightbulb },
+  { name: 'Calculator', href: '/calculator', icon: Calculator },
   { name: 'Guidance', href: '/guidance', icon: GraduationCap },
 ]
 
@@ -120,7 +122,7 @@ export default function Navbar() {
                         <span>Settings</span>
                       </Link>
                     </DropdownMenuItem>
-                    {(session.user?.role === 'admin' || session.user?.role === 'moderator') && (
+                    {(session.user?.role === 'admin' || session.user?.role === 'moderator' || session.user?.role === 'superadmin') && (
                       <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>

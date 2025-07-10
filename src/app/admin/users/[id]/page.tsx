@@ -6,7 +6,10 @@ import { useRouter, useParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { User, Mail, Calendar, Shield, FileText, Lightbulb, ArrowLeft, Edit, Trash2 } from "lucide-react"
+import { DeleteDialog } from "@/components/ui/delete-dialog"
+import { useToast } from "@/components/ui/toast"
+import { User, Mail, Calendar, Shield, FileText, Lightbulb, ArrowLeft, Edit, Trash2, GraduationCap } from "lucide-react"
+import { Degree } from "@/types"
 
 interface UserProfile {
   _id: string
@@ -15,6 +18,8 @@ interface UserProfile {
   studentId: string
   faculty: string
   role: string
+  year?: number | null
+  degree?: string | null
   createdAt: string
   updatedAt: string
   researchPapers?: number
@@ -25,24 +30,55 @@ export default function AdminUserProfilePage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const params = useParams()
+  const { addToast } = useToast()
   const userId = params.id as string
   const [user, setUser] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(false)
+  const [degrees, setDegrees] = useState<Degree[]>([])
+  const [userDegree, setUserDegree] = useState<Degree | null>(null)
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean
+    userName: string
+  }>({
+    open: false,
+    userName: ""
+  })
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/auth/signin")
     } else if (status === "authenticated") {
-      // Check if user is admin (only admins can manage users)
+      // Check if user is admin or superadmin (only admins and superadmins can manage users)
       const userRole = session?.user?.role
-      if (!userRole || userRole !== 'admin') {
+      if (!userRole || !['admin', 'superadmin'].includes(userRole)) {
         router.push("/admin")
         return
       }
       fetchUserProfile()
+      fetchDegrees()
     }
   }, [status, session, router, userId])
+
+  // Find user's degree when both user and degrees are loaded
+  useEffect(() => {
+    if (user && user.degree && degrees.length > 0) {
+      const degree = degrees.find(d => d._id === user.degree)
+      setUserDegree(degree || null)
+    }
+  }, [user, degrees])
+
+  const fetchDegrees = async () => {
+    try {
+      const response = await fetch("/api/admin/degrees")
+      const data = await response.json()
+      if (data.success) {
+        setDegrees(data.data || [])
+      }
+    } catch (error) {
+      console.error("Failed to fetch degrees:", error)
+    }
+  }
 
   const fetchUserProfile = async () => {
     setLoading(true)
@@ -67,10 +103,30 @@ export default function AdminUserProfilePage() {
   const handleDeleteUser = async () => {
     if (!user) return
     
-    const confirmed = confirm(`Are you sure you want to delete user "${user.name}"? This action cannot be undone.`)
-    if (!confirmed) return
+    // Permission check: Normal admins cannot delete other admins or super admins
+    if (session?.user?.role === 'admin' && 
+        (user.role === 'admin' || user.role === 'superadmin') &&
+        user._id !== session?.user?.id) {
+      addToast({
+        title: "Permission denied",
+        description: "You do not have permission to delete other admin users. Only Super Admin can perform this action.",
+        variant: "error"
+      })
+      return
+    }
+    
+    setDeleteDialog({
+      open: true,
+      userName: user.name
+    })
+  }
 
+  const confirmDeleteUser = async () => {
+    if (!user) return
+    
     setDeleting(true)
+    setDeleteDialog({ open: false, userName: "" })
+    
     try {
       const response = await fetch(`/api/admin/users/${userId}`, {
         method: 'DELETE',
@@ -79,14 +135,27 @@ export default function AdminUserProfilePage() {
       const data = await response.json()
 
       if (data.success) {
+        addToast({
+          title: "User deleted successfully",
+          description: `User "${user.name}" has been permanently deleted.`,
+          variant: "success"
+        })
         router.push("/admin/users")
       } else {
         console.error('Failed to delete user:', data.error)
-        alert('Failed to delete user: ' + data.error)
+        addToast({
+          title: "Failed to delete user",
+          description: data.error,
+          variant: "error"
+        })
       }
     } catch (error) {
       console.error('Failed to delete user:', error)
-      alert('Failed to delete user')
+      addToast({
+        title: "Failed to delete user",
+        description: "An unexpected error occurred while deleting the user.",
+        variant: "error"
+      })
     } finally {
       setDeleting(false)
     }
@@ -135,14 +204,42 @@ export default function AdminUserProfilePage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => router.push(`/admin/users/${userId}/edit`)}>
+          <Button 
+            onClick={() => router.push(`/admin/users/${userId}/edit`)}
+            disabled={
+              // Normal admins cannot edit other admins or super admins
+              session?.user?.role === 'admin' && 
+              (user.role === 'admin' || user.role === 'superadmin') &&
+              user._id !== session?.user?.id
+            }
+            title={
+              session?.user?.role === 'admin' && 
+              (user.role === 'admin' || user.role === 'superadmin') &&
+              user._id !== session?.user?.id
+                ? "Only Super Admin can edit other admins"
+                : "Edit User"
+            }
+          >
             <Edit className="w-4 h-4 mr-2" />
             Edit User
           </Button>
           <Button 
             variant="destructive" 
             onClick={handleDeleteUser}
-            disabled={deleting}
+            disabled={
+              deleting ||
+              // Normal admins cannot delete other admins or super admins
+              (session?.user?.role === 'admin' && 
+              (user.role === 'admin' || user.role === 'superadmin') &&
+              user._id !== session?.user?.id)
+            }
+            title={
+              session?.user?.role === 'admin' && 
+              (user.role === 'admin' || user.role === 'superadmin') &&
+              user._id !== session?.user?.id
+                ? "Only Super Admin can delete other admins"
+                : deleting ? 'Deleting...' : 'Delete User'
+            }
           >
             <Trash2 className="w-4 h-4 mr-2" />
             {deleting ? 'Deleting...' : 'Delete User'}
@@ -160,8 +257,21 @@ export default function AdminUserProfilePage() {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <CardTitle className="text-2xl">{user.name}</CardTitle>
-                <Badge variant={user.role === 'admin' ? 'destructive' : user.role === 'moderator' ? 'default' : 'secondary'}>
-                  {user.role}
+                <Badge 
+                  variant={
+                    user.role === 'superadmin' ? 'destructive' :
+                    user.role === 'admin' ? 'destructive' : 
+                    user.role === 'moderator' ? 'secondary' : 
+                    'default'
+                  }
+                  className={
+                    user.role === 'superadmin' ? 'bg-purple-100 text-purple-800 hover:bg-purple-200' :
+                    user.role === 'student' ? 'bg-green-100 text-green-800 hover:bg-green-200' :
+                    user.role === 'moderator' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' :
+                    ''
+                  }
+                >
+                  {user.role === 'superadmin' ? 'Super Admin' : user.role}
                 </Badge>
               </div>
               <CardDescription>{user.email}</CardDescription>
@@ -199,6 +309,20 @@ export default function AdminUserProfilePage() {
                 <div>
                   <p className="text-sm text-gray-500">Role</p>
                   <p className="font-medium capitalize">{user.role}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <Calendar className="w-5 h-5 text-gray-500" />
+                <div>
+                  <p className="text-sm text-gray-500">Academic Year</p>
+                  <p className="font-medium">{user.year ? `Year ${user.year}` : 'Not set'}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <GraduationCap className="w-5 h-5 text-gray-500" />
+                <div>
+                  <p className="text-sm text-gray-500">Degree Programme</p>
+                  <p className="font-medium">{userDegree ? userDegree.degreeName : (user.degree ? 'Loading...' : 'Not assigned')}</p>
                 </div>
               </div>
             </div>
@@ -262,6 +386,16 @@ export default function AdminUserProfilePage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}
+        title={deleteDialog.userName}
+        description="This will permanently delete the user and all their associated data. This action cannot be undone."
+        onConfirm={confirmDeleteUser}
+        loading={deleting}
+      />
     </div>
   )
 }

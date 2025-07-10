@@ -44,9 +44,9 @@ export default function AdminResearchPage() {
     if (status === "unauthenticated") {
       router.push("/auth/signin")
     } else if (status === "authenticated") {
-      // Check if user is admin or moderator
+      // Check if user is admin, superadmin, or moderator
       const userRole = session?.user?.role
-      if (!userRole || (userRole !== 'admin' && userRole !== 'moderator')) {
+      if (!userRole || !['admin', 'superadmin', 'moderator'].includes(userRole)) {
         router.push("/dashboard")
         return
       }

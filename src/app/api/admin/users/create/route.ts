@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session?.user?.role || session.user.role !== 'admin') {
+    if (!session?.user?.role || !['admin', 'superadmin'].includes(session.user.role)) {
       return NextResponse.json({ 
         success: false, 
         error: "Access denied. Admin role required." 
@@ -20,13 +20,13 @@ export async function POST(request: NextRequest) {
     await connectDB()
 
     const body = await request.json()
-    const { name, email, password, studentId, faculty, role, year } = body
+    const { name, email, password, studentId, faculty, role, year, degree } = body
 
     // Validate required fields
     if (!name || !email || !password || !studentId || !faculty || !role) {
       return NextResponse.json({ 
         success: false, 
-        error: "All fields except academic year are required" 
+        error: "All fields except academic year and degree are required" 
       }, { status: 400 })
     }
 
@@ -47,13 +47,31 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Validate role
-    const validRoles = ['student', 'moderator', 'admin']
+    // Role validation based on current user's permissions
+    const currentUserRole = session.user.role
+    let validRoles = ['student', 'moderator']
+    
+    if (currentUserRole === 'superadmin') {
+      // Super admin can create any role including admin and superadmin
+      validRoles = ['student', 'moderator', 'admin', 'superadmin']
+    } else if (currentUserRole === 'admin') {
+      // Regular admin can create student, moderator, and admin roles
+      validRoles = ['student', 'moderator', 'admin']
+    }
+
     if (!validRoles.includes(role)) {
       return NextResponse.json({ 
         success: false, 
-        error: "Invalid role" 
+        error: `Invalid role. Available roles: ${validRoles.join(', ')}` 
       }, { status: 400 })
+    }
+
+    // Prevent non-super-admins from creating super admin accounts
+    if (role === 'superadmin' && currentUserRole !== 'superadmin') {
+      return NextResponse.json({ 
+        success: false, 
+        error: "Only super admin can create super admin accounts" 
+      }, { status: 403 })
     }
 
     // Validate year if provided
@@ -97,6 +115,7 @@ export async function POST(request: NextRequest) {
       faculty,
       role,
       year: year !== null && year !== undefined ? parseInt(year) : null,
+      degree: degree !== null && degree !== undefined && degree !== "not-set" ? degree : null,
       createdAt: new Date(),
       updatedAt: new Date()
     })

@@ -17,18 +17,19 @@ const registerSchema = z.object({
     Faculty.ENGINEERING,
     Faculty.BUSINESS,
     Faculty.COMPUTING,
-    Faculty.SCIENCE,
-    Faculty.MANAGEMENT
+    Faculty.SCIENCE
   ]),
   year: z.number().min(1).max(4),
 })
+
+type RegisterData = z.infer<typeof registerSchema>
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
     // Validate input
-    const validatedData = registerSchema.parse(body)
+    const validatedData: RegisterData = registerSchema.parse(body)
     
     // Additional validation: Only students can register through this endpoint
     // Staff accounts (moderators, admins) should be created by admins

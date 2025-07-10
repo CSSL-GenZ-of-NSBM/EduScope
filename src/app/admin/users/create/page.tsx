@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ArrowLeft, Save, UserPlus, Loader2 } from "lucide-react"
+import { Degree } from "@/types"
 
 export default function AdminCreateUserPage() {
   const { data: session, status } = useSession()
@@ -17,6 +18,7 @@ export default function AdminCreateUserPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [degrees, setDegrees] = useState<Degree[]>([])
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -25,6 +27,7 @@ export default function AdminCreateUserPage() {
     studentId: "",
     faculty: "",
     year: "not-set",
+    degree: "not-set",
     role: "student"
   })
 
@@ -32,14 +35,33 @@ export default function AdminCreateUserPage() {
     if (status === "unauthenticated") {
       router.push("/auth/signin")
     } else if (status === "authenticated") {
-      // Check if user is admin (only admins can create users)
+      // Check if user is admin or superadmin (only admins and superadmins can create users)
       const userRole = session?.user?.role
-      if (!userRole || userRole !== 'admin') {
+      if (!userRole || !['admin', 'superadmin'].includes(userRole)) {
         router.push("/admin")
         return
       }
     }
   }, [status, session, router])
+
+  // Fetch degrees for selection
+  useEffect(() => {
+    const fetchDegrees = async () => {
+      try {
+        const response = await fetch("/api/admin/degrees")
+        const data = await response.json()
+        if (data.success) {
+          setDegrees(data.data || [])
+        }
+      } catch (error) {
+        console.error("Failed to fetch degrees:", error)
+      }
+    }
+
+    if (status === "authenticated") {
+      fetchDegrees()
+    }
+  }, [status])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -58,7 +80,7 @@ export default function AdminCreateUserPage() {
 
     // Validate required fields
     if (!formData.name || !formData.email || !formData.password || !formData.studentId || !formData.faculty || !formData.role) {
-      setError("All fields except academic year are required")
+      setError("All fields except academic year and degree are required")
       setLoading(false)
       return
     }
@@ -86,7 +108,8 @@ export default function AdminCreateUserPage() {
         studentId: formData.studentId,
         faculty: formData.faculty,
         role: formData.role,
-        year: formData.year === "not-set" ? null : parseInt(formData.year)
+        year: formData.year === "not-set" ? null : parseInt(formData.year),
+        degree: formData.degree === "not-set" ? null : formData.degree
       }
 
       const response = await fetch("/api/admin/users/create", {
@@ -220,6 +243,24 @@ export default function AdminCreateUserPage() {
                 </Select>
               </div>
 
+              {/* Degree Programme */}
+              <div className="space-y-2">
+                <Label htmlFor="degree">Degree Programme</Label>
+                <Select value={formData.degree} onValueChange={(value) => handleInputChange('degree', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select degree programme" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="not-set">Not Set</SelectItem>
+                    {degrees.map((degree) => (
+                      <SelectItem key={degree._id} value={degree._id}>
+                        {degree.degreeName} ({degree.faculty})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Academic Year */}
               <div className="space-y-2">
                 <Label htmlFor="year">Academic Year</Label>
@@ -248,6 +289,9 @@ export default function AdminCreateUserPage() {
                     <SelectItem value="student">Student</SelectItem>
                     <SelectItem value="moderator">Moderator</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
+                    {session?.user?.role === 'superadmin' && (
+                      <SelectItem value="superadmin">Super Admin</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -288,9 +332,14 @@ export default function AdminCreateUserPage() {
             <div className="p-4 bg-gray-50 rounded-lg">
               <h4 className="font-medium mb-2">Role Permissions</h4>
               <div className="text-sm text-gray-600 space-y-1">
+                {formData.role === 'superadmin' && (
+                  <div>
+                    <p><strong>Super Admin:</strong> Highest level access with ability to manage all users including other admins, system settings, and all platform features.</p>
+                  </div>
+                )}
                 {formData.role === 'admin' && (
                   <div>
-                    <p><strong>Admin:</strong> Full access to all features including user management, content moderation, and system administration.</p>
+                    <p><strong>Admin:</strong> Full access to all features including user management (except other admins), content moderation, and system administration.</p>
                   </div>
                 )}
                 {formData.role === 'moderator' && (

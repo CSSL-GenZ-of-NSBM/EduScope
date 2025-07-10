@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DeleteDialog } from "@/components/ui/delete-dialog"
+import { useToast } from "@/components/ui/toast"
 import { User, Mail, Calendar, Shield, Trash2, Edit, Eye, Plus } from "lucide-react"
 
 interface AdminUser {
@@ -24,19 +26,29 @@ interface AdminUser {
 export default function AdminUsersPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { addToast } = useToast()
   const [users, setUsers] = useState<AdminUser[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [facultyFilter, setFacultyFilter] = useState("all")
   const [deletingUsers, setDeletingUsers] = useState<Set<string>>(new Set())
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean
+    userId: string
+    userName: string
+  }>({
+    open: false,
+    userId: "",
+    userName: ""
+  })
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/auth/signin")
     } else if (status === "authenticated") {
-      // Check if user is admin (only admins can manage users)
+      // Check if user is admin or superadmin (only admins and superadmins can manage users)
       const userRole = session?.user?.role
-      if (!userRole || userRole !== 'admin') {
+      if (!userRole || !['admin', 'superadmin'].includes(userRole)) {
         router.push("/admin")
         return
       }
@@ -65,10 +77,18 @@ export default function AdminUsersPage() {
   }
 
   const handleDeleteUser = async (userId: string, userName: string) => {
-    const confirmed = confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone.`)
-    if (!confirmed) return
+    setDeleteDialog({
+      open: true,
+      userId,
+      userName
+    })
+  }
 
+  const confirmDeleteUser = async () => {
+    const { userId, userName } = deleteDialog
     setDeletingUsers(prev => new Set([...prev, userId]))
+    setDeleteDialog({ open: false, userId: "", userName: "" })
+    
     try {
       const response = await fetch(`/api/admin/users/${userId}`, {
         method: 'DELETE',
@@ -79,13 +99,26 @@ export default function AdminUsersPage() {
       if (data.success) {
         // Remove user from the list
         setUsers(prev => prev.filter(user => user._id !== userId))
+        addToast({
+          title: "User deleted successfully",
+          description: `User "${userName}" has been permanently deleted.`,
+          variant: "success"
+        })
       } else {
         console.error('Failed to delete user:', data.error)
-        alert('Failed to delete user: ' + data.error)
+        addToast({
+          title: "Failed to delete user",
+          description: data.error,
+          variant: "error"
+        })
       }
     } catch (error) {
       console.error('Failed to delete user:', error)
-      alert('Failed to delete user')
+      addToast({
+        title: "Failed to delete user",
+        description: "An unexpected error occurred while deleting the user.",
+        variant: "error"
+      })
     } finally {
       setDeletingUsers(prev => {
         const next = new Set(prev)
@@ -162,17 +195,19 @@ export default function AdminUsersPage() {
                   </CardTitle>
                   <Badge 
                     variant={
+                      user.role === 'superadmin' ? 'destructive' :
                       user.role === 'admin' ? 'destructive' : 
                       user.role === 'moderator' ? 'secondary' : 
                       'default'
                     }
                     className={
+                      user.role === 'superadmin' ? 'bg-purple-100 text-purple-800 hover:bg-purple-200' :
                       user.role === 'student' ? 'bg-green-100 text-green-800 hover:bg-green-200' :
                       user.role === 'moderator' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' :
                       ''
                     }
                   >
-                    {user.role}
+                    {user.role === 'superadmin' ? 'Super Admin' : user.role}
                   </Badge>
                 </div>
               </div>
@@ -224,7 +259,19 @@ export default function AdminUsersPage() {
                     size="sm"
                     className="flex-1"
                     onClick={() => router.push(`/admin/users/${user._id}/edit`)}
-                    title="Edit User"
+                    disabled={
+                      // Normal admins cannot edit other admins or super admins
+                      session?.user?.role === 'admin' && 
+                      (user.role === 'admin' || user.role === 'superadmin') &&
+                      user._id !== session?.user?.id
+                    }
+                    title={
+                      session?.user?.role === 'admin' && 
+                      (user.role === 'admin' || user.role === 'superadmin') &&
+                      user._id !== session?.user?.id
+                        ? "Only Super Admin can edit other admins"
+                        : "Edit User"
+                    }
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
@@ -233,8 +280,20 @@ export default function AdminUsersPage() {
                     size="sm"
                     className="flex-1"
                     onClick={() => handleDeleteUser(user._id, user.name)}
-                    disabled={deletingUsers.has(user._id)}
-                    title="Delete User"
+                    disabled={
+                      deletingUsers.has(user._id) ||
+                      // Normal admins cannot delete other admins or super admins
+                      (session?.user?.role === 'admin' && 
+                      (user.role === 'admin' || user.role === 'superadmin') &&
+                      user._id !== session?.user?.id)
+                    }
+                    title={
+                      session?.user?.role === 'admin' && 
+                      (user.role === 'admin' || user.role === 'superadmin') &&
+                      user._id !== session?.user?.id
+                        ? "Only Super Admin can delete other admins"
+                        : "Delete User"
+                    }
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -254,6 +313,16 @@ export default function AdminUsersPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}
+        title={deleteDialog.userName}
+        description="This will permanently delete the user and all their associated data. This action cannot be undone."
+        onConfirm={confirmDeleteUser}
+        loading={deletingUsers.has(deleteDialog.userId)}
+      />
     </div>
   )
 }

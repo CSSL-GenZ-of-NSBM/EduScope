@@ -39,7 +39,7 @@ export default function EditResearchPaper() {
       router.push("/auth/signin")
     } else if (status === "authenticated") {
       const userRole = session?.user?.role
-      if (!userRole || (userRole !== 'admin' && userRole !== 'moderator')) {
+      if (!userRole || !['admin', 'superadmin', 'moderator'].includes(userRole)) {
         router.push("/dashboard")
         return
       }

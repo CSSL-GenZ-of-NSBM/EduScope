@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useToast } from "@/components/ui/toast"
 import { ArrowLeft, Save, User } from "lucide-react"
+import { Degree } from "@/types"
 
 interface UserProfile {
   _id: string
@@ -18,6 +20,7 @@ interface UserProfile {
   faculty: string
   role: string
   year: number | null
+  degree?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -26,8 +29,10 @@ export default function AdminUserEditPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const params = useParams()
+  const { addToast } = useToast()
   const userId = params.id as string
   const [user, setUser] = useState<UserProfile | null>(null)
+  const [degrees, setDegrees] = useState<Degree[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState({
@@ -37,6 +42,7 @@ export default function AdminUserEditPage() {
     faculty: "",
     role: "",
     year: "",
+    degree: "",
     newPassword: ""
   })
 
@@ -44,15 +50,28 @@ export default function AdminUserEditPage() {
     if (status === "unauthenticated") {
       router.push("/auth/signin")
     } else if (status === "authenticated") {
-      // Check if user is admin (only admins can manage users)
+      // Check if user is admin or superadmin (only admins and superadmins can manage users)
       const userRole = session?.user?.role
-      if (!userRole || userRole !== 'admin') {
+      if (!userRole || !['admin', 'superadmin'].includes(userRole)) {
         router.push("/admin")
         return
       }
       fetchUserProfile()
+      fetchDegrees()
     }
   }, [status, session, router, userId])
+
+  const fetchDegrees = async () => {
+    try {
+      const response = await fetch("/api/admin/degrees")
+      const data = await response.json()
+      if (data.success) {
+        setDegrees(data.data || [])
+      }
+    } catch (error) {
+      console.error("Failed to fetch degrees:", error)
+    }
+  }
 
   const fetchUserProfile = async () => {
     setLoading(true)
@@ -69,6 +88,7 @@ export default function AdminUserEditPage() {
           faculty: data.data.faculty,
           role: data.data.role,
           year: data.data.year ? data.data.year.toString() : "not-set",
+          degree: data.data.degree || "not-set",
           newPassword: ""
         })
       } else {
@@ -84,8 +104,23 @@ export default function AdminUserEditPage() {
   }
 
   const handleSave = async () => {
+    // Permission check: Normal admins cannot edit other admins or super admins
+    if (session?.user?.role === 'admin' && 
+        user && (user.role === 'admin' || user.role === 'superadmin') &&
+        user._id !== session?.user?.id) {
+      addToast({
+        title: "Permission denied",
+        description: "You do not have permission to edit other admin users. Only Super Admin can perform this action.",
+        variant: "error"
+      })
+      return
+    }
+
     setSaving(true)
     try {
+      // Store original role for comparison
+      const originalRole = user?.role
+      
       // Prepare the data for submission
       const updateData: any = {
         name: formData.name,
@@ -93,7 +128,8 @@ export default function AdminUserEditPage() {
         studentId: formData.studentId,
         faculty: formData.faculty,
         role: formData.role,
-        year: formData.year === "not-set" ? null : parseInt(formData.year)
+        year: formData.year === "not-set" ? null : parseInt(formData.year),
+        degree: formData.degree === "not-set" ? null : formData.degree
       }
 
       // Only include password if it's been changed
@@ -112,14 +148,34 @@ export default function AdminUserEditPage() {
       const data = await response.json()
 
       if (data.success) {
+        // Show appropriate success message based on what changed
+        let successMessage = "User profile updated successfully"
+        if (originalRole !== formData.role) {
+          successMessage = `User role changed from ${originalRole} to ${formData.role} successfully`
+        }
+        
+        addToast({
+          title: "Changes saved",
+          description: successMessage,
+          variant: "success"
+        })
+        
         router.push(`/admin/users/${userId}`)
       } else {
         console.error('Failed to update user:', data.error)
-        alert('Failed to update user: ' + data.error)
+        addToast({
+          title: "Failed to update user",
+          description: data.error,
+          variant: "error"
+        })
       }
     } catch (error) {
       console.error('Failed to update user:', error)
-      alert('Failed to update user')
+      addToast({
+        title: "Failed to update user",
+        description: "An unexpected error occurred while updating the user.",
+        variant: "error"
+      })
     } finally {
       setSaving(false)
     }
@@ -248,7 +304,16 @@ export default function AdminUserEditPage() {
             {/* Role */}
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
-              <Select value={formData.role} onValueChange={(value) => handleInputChange('role', value)}>
+              <Select 
+                value={formData.role} 
+                onValueChange={(value) => handleInputChange('role', value)}
+                disabled={
+                  // Normal admins cannot change roles of other admins or super admins
+                  session?.user?.role === 'admin' && 
+                  user && (user.role === 'admin' || user.role === 'superadmin') &&
+                  user._id !== session?.user?.id
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
@@ -256,8 +321,19 @@ export default function AdminUserEditPage() {
                   <SelectItem value="student">Student</SelectItem>
                   <SelectItem value="moderator">Moderator</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
+                  {/* Only show Super Admin option to logged-in super admins */}
+                  {session?.user?.role === 'superadmin' && (
+                    <SelectItem value="superadmin">Super Admin</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
+              {session?.user?.role === 'admin' && 
+               user && (user.role === 'admin' || user.role === 'superadmin') &&
+               user._id !== session?.user?.id && (
+                <p className="text-sm text-red-600">
+                  Only Super Admin can modify roles of other admin users
+                </p>
+              )}
             </div>
 
             {/* Academic Year */}
@@ -273,6 +349,24 @@ export default function AdminUserEditPage() {
                   <SelectItem value="2">Year 2</SelectItem>
                   <SelectItem value="3">Year 3</SelectItem>
                   <SelectItem value="4">Year 4</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Degree Programme */}
+            <div className="space-y-2">
+              <Label htmlFor="degree">Degree Programme</Label>
+              <Select value={formData.degree} onValueChange={(value) => handleInputChange('degree', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select degree programme" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="not-set">Not Set</SelectItem>
+                  {degrees.map((degree) => (
+                    <SelectItem key={degree._id} value={degree._id}>
+                      {degree.degreeName} ({degree.faculty})
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

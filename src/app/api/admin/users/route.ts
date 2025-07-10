@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     const userRole = token.role
-    if (!userRole || userRole !== 'admin') {
+    if (!userRole || !['admin', 'superadmin'].includes(userRole)) {
       return NextResponse.json(
         { success: false, error: 'Admin access required' },
         { status: 403 }

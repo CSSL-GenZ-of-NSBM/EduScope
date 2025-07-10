@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
       faculty: user.faculty,
       role: user.role,
       year: user.year,
+      degree: user.degree,
     })
   } catch (error) {
     console.error('Error fetching user profile:', error)

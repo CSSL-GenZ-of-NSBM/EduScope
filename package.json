@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "seed:degrees": "node scripts/seed-degrees.js",
+    "setup:users": "node scripts/setup-users.js"
   },
   "dependencies": {
     "@auth/mongodb-adapter": "^3.10.0",

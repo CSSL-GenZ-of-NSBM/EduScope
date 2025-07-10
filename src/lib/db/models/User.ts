@@ -50,6 +50,11 @@ const UserSchema = new Schema<UserDocument>({
     max: 4,
     default: null
   },
+  degree: {
+    type: Schema.Types.ObjectId,
+    ref: 'Degree',
+    default: null
+  },
   role: {
     type: String,
     enum: Object.values(UserRole),
@@ -63,6 +68,40 @@ const UserSchema = new Schema<UserDocument>({
     type: String,
     maxlength: 500,
     default: null
+  },
+  pendingDegreeChange: {
+    type: {
+      currentDegree: {
+        type: Schema.Types.ObjectId,
+        ref: 'Degree',
+        required: true
+      },
+      requestedDegree: {
+        type: Schema.Types.ObjectId,
+        ref: 'Degree',
+        required: true
+      },
+      status: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected'],
+        default: 'pending'
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now
+      },
+      reviewedBy: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+      },
+      reviewedAt: {
+        type: Date,
+        default: null
+      }
+    },
+    required: false,
+    default: undefined
   }
 }, {
   timestamps: true
@@ -70,5 +109,6 @@ const UserSchema = new Schema<UserDocument>({
 
 // Only create indexes not already defined as unique in schema
 UserSchema.index({ faculty: 1, year: 1 })
+UserSchema.index({ degree: 1 })
 
 export default mongoose.models.User || mongoose.model<UserDocument>('User', UserSchema)
