@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import dbConnect from '@/lib/db/mongodb'
 import User from '@/lib/db/models/User'
+import { auditLogger } from '@/lib/audit/audit-logger'
+import { AuditAction, AuditResource } from '@/types'
+import { withRateLimit, rateLimiters } from '@/lib/rate-limit/rate-limiter'
 
-export async function GET(request: NextRequest) {
+async function getUsers(request: NextRequest) {
   try {
     // Check authentication and authorization - only admins can manage users
     const token = await getToken({ req: request })
@@ -56,6 +59,28 @@ export async function GET(request: NextRequest) {
 
     const total = await User.countDocuments(query)
 
+    // Log admin user list viewing
+    await auditLogger.log({
+      userId: token.sub || "unknown",
+      userEmail: token.email || "unknown@email.com",
+      userRole: token.role || "unknown",
+      action: AuditAction.ADMIN_USER_MANAGEMENT,
+      resource: AuditResource.USER,
+      details: {
+        action: "users_list_view",
+        searchFilters: {
+          search,
+          faculty,
+          page,
+          limit
+        },
+        resultCount: users.length,
+        totalUsers: total
+      },
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      userAgent: request.headers.get('user-agent') || undefined
+    })
+
     return NextResponse.json({
       success: true,
       data: users,
@@ -77,3 +102,6 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+// Apply rate limiting to the admin users endpoint
+export const GET = withRateLimit(rateLimiters.admin, getUsers)

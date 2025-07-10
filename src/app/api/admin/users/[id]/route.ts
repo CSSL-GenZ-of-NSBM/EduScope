@@ -6,9 +6,12 @@ import User from "@/lib/db/models/User"
 import ResearchPaper from "@/lib/db/models/ResearchPaper"
 import { ObjectId } from "mongodb"
 import bcrypt from "bcryptjs"
+import { auditLogger } from "@/lib/audit/audit-logger"
+import { AuditAction, AuditResource } from "@/types"
+import { withRateLimit, rateLimiters } from "@/lib/rate-limit/rate-limiter"
 
 // GET /api/admin/users/[id] - Get individual user profile
-export async function GET(
+async function getUserProfile(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -16,6 +19,23 @@ export async function GET(
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.role || !['admin', 'superadmin'].includes(session.user.role)) {
+      // Log unauthorized access attempt
+      await auditLogger.log({
+        userId: session?.user?.id || "anonymous",
+        userEmail: session?.user?.email || "unknown",
+        userRole: session?.user?.role || "guest",
+        action: AuditAction.USER_VIEW,
+        resource: AuditResource.USER,
+        resourceId: params.id,
+        details: {
+          error: "Unauthorized access attempt to admin user profile",
+          targetUserId: params.id,
+          actualRole: session?.user?.role
+        },
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+        userAgent: request.headers.get('user-agent') || undefined
+      })
+      
       return NextResponse.json({ 
         success: false, 
         error: "Access denied. Admin role required." 
@@ -55,6 +75,23 @@ export async function GET(
       ideas: ideasCount
     }
 
+    // Log successful user profile viewing
+    await auditLogger.logAdminAction(
+      session.user.id,
+      session.user.email || "unknown@email.com",
+      session.user.role,
+      AuditAction.USER_VIEW,
+      AuditResource.USER,
+      userId,
+      userId,
+      {
+        viewedUserEmail: user.email,
+        viewedUserRole: user.role,
+        viewedUserFaculty: user.faculty
+      },
+      request
+    )
+
     return NextResponse.json({ 
       success: true, 
       data: userProfile 
@@ -70,7 +107,7 @@ export async function GET(
 }
 
 // PUT /api/admin/users/[id] - Update user profile
-export async function PUT(
+async function updateUserProfile(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -236,6 +273,34 @@ export async function PUT(
       }, { status: 404 })
     }
 
+    // Log successful user update
+    await auditLogger.logAdminAction(
+      session.user.id,
+      session.user.email || "unknown@email.com",
+      session.user.role,
+      AuditAction.USER_UPDATE,
+      AuditResource.USER,
+      userId,
+      userId,
+      {
+        updatedFields: Object.keys(updateData).filter(key => key !== 'password'),
+        originalUserData: {
+          name: targetUser.name,
+          email: targetUser.email,
+          role: targetUser.role,
+          faculty: targetUser.faculty
+        },
+        newUserData: {
+          name: updatedUser.name,
+          email: updatedUser.email,
+          role: updatedUser.role,
+          faculty: updatedUser.faculty
+        },
+        passwordChanged: !!password
+      },
+      request
+    )
+
     return NextResponse.json({ 
       success: true, 
       data: updatedUser,
@@ -252,7 +317,7 @@ export async function PUT(
 }
 
 // DELETE /api/admin/users/[id] - Delete user (optional functionality)
-export async function DELETE(
+async function deleteUser(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -314,6 +379,27 @@ export async function DELETE(
       }, { status: 404 })
     }
 
+    // Log successful user deletion
+    await auditLogger.logAdminAction(
+      session.user.id,
+      session.user.email || "unknown@email.com",
+      session.user.role,
+      AuditAction.USER_DELETE,
+      AuditResource.USER,
+      userId,
+      userId,
+      {
+        deletedUserData: {
+          name: deletedUser.name,
+          email: deletedUser.email,
+          role: deletedUser.role,
+          faculty: deletedUser.faculty,
+          studentId: deletedUser.studentId
+        }
+      },
+      request
+    )
+
     // TODO: Also delete user's research papers and ideas when implementing soft delete
     // For now, we'll keep the content but remove the association
 
@@ -330,3 +416,23 @@ export async function DELETE(
     }, { status: 500 })
   }
 }
+
+// Apply rate limiting to all admin user management endpoints
+export const GET = withRateLimit(rateLimiters.admin, async (request: NextRequest) => {
+  // Extract params from the URL for dynamic routes
+  const url = new URL(request.url)
+  const id = url.pathname.split('/').pop() || ''
+  return getUserProfile(request, { params: { id } })
+})
+
+export const PUT = withRateLimit(rateLimiters.admin, async (request: NextRequest) => {
+  const url = new URL(request.url)
+  const id = url.pathname.split('/').pop() || ''
+  return updateUserProfile(request, { params: { id } })
+})
+
+export const DELETE = withRateLimit(rateLimiters.admin, async (request: NextRequest) => {
+  const url = new URL(request.url)
+  const id = url.pathname.split('/').pop() || ''
+  return deleteUser(request, { params: { id } })
+})

@@ -40,9 +40,14 @@ export default function AdminLayout({
               Pending Requests
             </a>
             {(userRole === 'admin' || userRole === 'superadmin') && (
-              <a href="/admin/users" className="block px-6 py-3 text-gray-700 hover:bg-gray-100 border-r-2 border-transparent hover:border-blue-500">
-                Users
-              </a>
+              <>
+                <a href="/admin/users" className="block px-6 py-3 text-gray-700 hover:bg-gray-100 border-r-2 border-transparent hover:border-blue-500">
+                  Users
+                </a>
+                <a href="/admin/audit-logs" className="block px-6 py-3 text-gray-700 hover:bg-gray-100 border-r-2 border-transparent hover:border-blue-500">
+                  Audit Logs
+                </a>
+              </>
             )}
           </nav>
         </div>

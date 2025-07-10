@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { connectDB } from "@/lib/db/mongodb"
 import User from "@/lib/db/models/User"
-import { Faculty } from "@/types"
+import { Faculty, AuditAction, AuditResource } from "@/types"
 import { z } from "zod"
+import { auditLogger } from "@/lib/audit/audit-logger"
+import { withRateLimit, rateLimiters } from "@/lib/rate-limit/rate-limiter"
 
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -24,9 +26,11 @@ const registerSchema = z.object({
 
 type RegisterData = z.infer<typeof registerSchema>
 
-export async function POST(request: NextRequest) {
+async function registerUser(request: NextRequest) {
+  let body: any = {}
+  
   try {
-    const body = await request.json()
+    body = await request.json()
     
     // Validate input
     const validatedData: RegisterData = registerSchema.parse(body)
@@ -51,6 +55,23 @@ export async function POST(request: NextRequest) {
     })
     
     if (existingUser) {
+      // Log failed registration attempt
+      await auditLogger.log({
+        userId: "anonymous",
+        userEmail: validatedData.email,
+        userRole: "guest",
+        action: AuditAction.REGISTER,
+        resource: AuditResource.USER,
+        details: {
+          error: "User already exists",
+          attemptedEmail: validatedData.email,
+          attemptedStudentId: validatedData.studentId,
+          faculty: validatedData.faculty
+        },
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+        userAgent: request.headers.get('user-agent') || undefined
+      })
+      
       return NextResponse.json(
         { error: "User with this email or student ID already exists" },
         { status: 400 }
@@ -66,6 +87,22 @@ export async function POST(request: NextRequest) {
       password: hashedPassword,
       role: "student",
     })
+    
+    // Log successful user registration
+    await auditLogger.logUserAction(
+      user._id.toString(),
+      user.email,
+      "student",
+      AuditAction.USER_CREATE,
+      AuditResource.USER,
+      user._id.toString(),
+      {
+        faculty: user.faculty,
+        studentId: user.studentId,
+        registrationMethod: "self-registration"
+      },
+      request
+    )
     
     return NextResponse.json(
       { 
@@ -83,6 +120,22 @@ export async function POST(request: NextRequest) {
     
   } catch (error) {
     if (error instanceof z.ZodError) {
+      // Log validation failure
+      await auditLogger.log({
+        userId: "anonymous",
+        userEmail: body.email || "unknown",
+        userRole: "guest",
+        action: AuditAction.REGISTER,
+        resource: AuditResource.USER,
+        details: {
+          error: "Validation failed",
+          validationErrors: error.errors,
+          attemptedData: { ...body, password: "[REDACTED]" }
+        },
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+        userAgent: request.headers.get('user-agent') || undefined
+      })
+      
       return NextResponse.json(
         { error: "Validation failed", details: error.errors },
         { status: 400 }
@@ -90,9 +143,28 @@ export async function POST(request: NextRequest) {
     }
     
     console.error("Registration error:", error)
+    
+    // Log general registration error
+    await auditLogger.log({
+      userId: "anonymous",
+      userEmail: "unknown",
+      userRole: "guest",
+      action: AuditAction.REGISTER,
+      resource: AuditResource.USER,
+      details: {
+        error: "Internal server error during registration",
+        errorMessage: error instanceof Error ? error.message : "Unknown error"
+      },
+      ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+      userAgent: request.headers.get('user-agent') || undefined
+    })
+    
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     )
   }
 }
+
+// Apply rate limiting to the registration endpoint
+export const POST = withRateLimit(rateLimiters.auth, registerUser)

@@ -379,3 +379,98 @@ export interface ActivityLog extends BaseDocument {
   details?: string;
   ipAddress?: string;
 }
+
+// Audit Log Enums
+export enum AuditAction {
+  // Authentication
+  LOGIN = 'login',
+  LOGOUT = 'logout',
+  REGISTER = 'register',
+  PASSWORD_CHANGE = 'password_change',
+  
+  // User Management
+  USER_CREATE = 'user_create',
+  USER_UPDATE = 'user_update',
+  USER_DELETE = 'user_delete',
+  USER_ROLE_CHANGE = 'user_role_change',
+  USER_VIEW = 'user_view',
+  
+  // Research Papers
+  PAPER_CREATE = 'paper_create',
+  PAPER_UPDATE = 'paper_update',
+  PAPER_DELETE = 'paper_delete',
+  PAPER_VIEW = 'paper_view',
+  PAPER_DOWNLOAD = 'paper_download',
+  PAPER_SAVE = 'paper_save',
+  PAPER_UNSAVE = 'paper_unsave',
+  PAPER_APPROVE = 'paper_approve',
+  PAPER_REJECT = 'paper_reject',
+  
+  // Ideas
+  IDEA_CREATE = 'idea_create',
+  IDEA_UPDATE = 'idea_update',
+  IDEA_DELETE = 'idea_delete',
+  IDEA_VIEW = 'idea_view',
+  IDEA_VOTE = 'idea_vote',
+  IDEA_COMMENT = 'idea_comment',
+  
+  // Degrees
+  DEGREE_CREATE = 'degree_create',
+  DEGREE_UPDATE = 'degree_update',
+  DEGREE_DELETE = 'degree_delete',
+  DEGREE_VIEW = 'degree_view',
+  DEGREE_REQUEST_CHANGE = 'degree_request_change',
+  
+  // Admin Actions
+  ADMIN_LOGIN = 'admin_login',
+  ADMIN_USER_MANAGEMENT = 'admin_user_management',
+  ADMIN_CONTENT_MODERATION = 'admin_content_moderation',
+  ADMIN_SETTINGS_CHANGE = 'admin_settings_change',
+  
+  // System Actions
+  FILE_UPLOAD = 'file_upload',
+  FILE_DELETE = 'file_delete',
+  SEARCH = 'search',
+  EXPORT_DATA = 'export_data'
+}
+
+export enum AuditResource {
+  USER = 'user',
+  RESEARCH_PAPER = 'research_paper',
+  IDEA = 'idea',
+  DEGREE = 'degree',
+  FILE = 'file',
+  SYSTEM = 'system',
+  AUTH = 'auth',
+  ADMIN = 'admin'
+}
+
+// Comprehensive Audit Log interface
+export interface AuditLog extends BaseDocument {
+  userId: string;
+  userEmail: string;
+  userRole: string;
+  action: AuditAction;
+  resource: AuditResource;
+  resourceId?: string;
+  details: Record<string, any>;
+  ipAddress?: string;
+  userAgent?: string;
+  metadata: Record<string, any>;
+  timestamp: Date;
+}
+
+// Audit Log Schema for MongoDB
+export interface AuditLogSchema extends BaseSchema {
+  userId: string;
+  userEmail: string;
+  userRole: string;
+  action: AuditAction;
+  resource: AuditResource;
+  resourceId?: string;
+  details: Record<string, any>;
+  ipAddress?: string;
+  userAgent?: string;
+  metadata: Record<string, any>;
+  timestamp: Date;
+}
