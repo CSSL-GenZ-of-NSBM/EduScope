@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent} from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Lightbulb, Search, TrendingUp, Users, MessageSquare } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import IdeaSubmissionForm from '@/components/ideas/IdeaSubmissionForm'
+import IdeaDisplay from '@/components/ideas/IdeaDisplay'
 
 export default function IdeasPage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -53,6 +53,36 @@ export default function IdeasPage() {
   const handleIdeaSubmitted = (newIdea: any) => {
     // Refresh the ideas list after submission
     fetchIdeas()
+  }
+
+  const handleVote = (ideaId: string) => {
+    // Refresh ideas to get updated vote counts
+    fetchIdeas()
+  }
+
+  const handleDeleteIdea = async (ideaId: string) => {
+    if (!confirm('Are you sure you want to delete this idea?')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/ideas/${ideaId}`, {
+        method: 'DELETE',
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        // Remove the idea from the list
+        setIdeas(ideas.filter((idea: any) => idea._id !== ideaId))
+        alert('Idea deleted successfully')
+      } else {
+        alert(result.error || 'Failed to delete idea')
+      }
+    } catch (error) {
+      console.error('Error deleting idea:', error)
+      alert('Failed to delete idea')
+    }
   }
 
   const filteredIdeas = ideas.filter((idea: any) =>
@@ -139,66 +169,18 @@ export default function IdeasPage() {
       {!loading && (
         <div className="grid gap-6">
           {filteredIdeas.map((idea: any) => (
-            <Card key={idea._id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CardTitle className="text-xl">{idea.title}</CardTitle>
-                      {idea.isTrending && (
-                        <Badge variant="secondary" className="bg-orange-100 text-orange-800">
-                          <TrendingUp className="w-3 h-3 mr-1" />
-                          Trending
-                        </Badge>
-                      )}
-                      {idea.isPopular && (
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                          Popular
-                        </Badge>
-                      )}
-                    </div>
-                    <CardDescription className="text-gray-600 mb-3">
-                      {idea.description}
-                    </CardDescription>
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {idea.tags?.map((tag: string) => (
-                        <Badge key={tag} variant="outline" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-4 text-sm text-gray-600">
-                    <span>By {idea.authorName || idea.author?.name}</span>
-                    <Badge variant="outline">{idea.field}</Badge>
-                    <span className="text-xs text-gray-500">
-                      {new Date(idea.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <Button variant="ghost" size="sm" className="text-gray-600">
-                      👍 {idea.votes || 0}
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-gray-600">
-                      💬 {idea.comments || 0}
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      View Details
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <IdeaDisplay
+              key={idea._id}
+              idea={idea}
+              onVote={handleVote}
+              onDelete={handleDeleteIdea}
+            />
           ))}
         </div>
       )}
 
       {/* Empty State */}
-      {filteredIdeas.length === 0 && (
+      {!loading && filteredIdeas.length === 0 && (
         <Card className="text-center py-12">
           <CardContent>
             <Lightbulb className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -206,8 +188,8 @@ export default function IdeasPage() {
             <p className="text-gray-500 mb-4">
               {searchQuery ? 'Try adjusting your search query' : 'Be the first to share an innovative idea!'}
             </p>
-            <Button variant="outline">
-              Clear Search
+            <Button variant="outline" onClick={() => setSearchQuery('')}>
+              {searchQuery ? 'Clear Search' : 'Submit an Idea'}
             </Button>
           </CardContent>
         </Card>

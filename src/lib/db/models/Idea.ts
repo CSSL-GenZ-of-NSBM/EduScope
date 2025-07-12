@@ -4,6 +4,7 @@ import { AcademicField, ContentStatus } from '@/types'
 export interface IdeaDocument extends Document {
   _id: string
   title: string
+  slug: string
   description: string
   field: AcademicField
   tags: string[]
@@ -42,6 +43,17 @@ const IdeaSchema = new Schema<IdeaDocument>({
     required: true,
     trim: true,
     maxlength: 200
+  },
+  slug: {
+    type: String,
+    unique: true,
+    trim: true,
+    lowercase: true,
+    match: /^[a-z0-9-]+$/,
+    default: function() {
+      // Fallback slug generation in case pre-validate doesn't run
+      return generateSlug(this.title || 'untitled-idea')
+    }
   },
   description: {
     type: String,
@@ -179,6 +191,7 @@ const IdeaSchema = new Schema<IdeaDocument>({
 
 // Indexes for better query performance
 IdeaSchema.index({ title: 'text', description: 'text', tags: 'text' })
+IdeaSchema.index({ slug: 1 }, { unique: true })
 IdeaSchema.index({ field: 1 })
 IdeaSchema.index({ status: 1 })
 IdeaSchema.index({ author: 1 })
@@ -199,8 +212,39 @@ IdeaSchema.virtual('isPopular').get(function() {
   return this.votes >= 10 || this.viewCount >= 50
 })
 
+// Function to generate slug from title
+function generateSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Replace multiple hyphens with single
+    .trim()
+    .substring(0, 100) // Limit length
+}
+
+// Pre-validate middleware to generate slug before validation
+IdeaSchema.pre('validate', async function(next) {
+  // Always ensure slug exists for new documents or when title changes
+  if (!this.slug || this.isModified('title')) {
+    let baseSlug = generateSlug(this.title)
+    let slug = baseSlug
+    let counter = 1
+    
+    // Ensure slug is unique
+    const Model = this.constructor as any
+    while (await Model.findOne({ slug, _id: { $ne: this._id } })) {
+      slug = `${baseSlug}-${counter}`
+      counter++
+    }
+    
+    this.slug = slug
+  }
+  next()
+})
+
 // Pre-save middleware to update lastActivity
-IdeaSchema.pre('save', function(next) {
+IdeaSchema.pre('save', async function(next) {
   if (this.isModified() && !this.isNew) {
     this.lastActivity = new Date()
   }
@@ -208,6 +252,10 @@ IdeaSchema.pre('save', function(next) {
 })
 
 // Static methods for common queries
+IdeaSchema.statics.findBySlug = function(slug: string) {
+  return this.findOne({ slug, status: ContentStatus.APPROVED })
+}
+
 IdeaSchema.statics.findTrending = function() {
   const weekAgo = new Date()
   weekAgo.setDate(weekAgo.getDate() - 7)
