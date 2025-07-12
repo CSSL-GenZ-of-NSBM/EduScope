@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -32,7 +32,7 @@ interface AdminResearchPaper extends Omit<ResearchPaper, 'uploadedBy'> {
   }
 }
 
-export default function AdminResearchPage() {
+function AdminResearchPageContent() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -472,5 +472,24 @@ export default function AdminResearchPage() {
         loading={deleting === deleteDialog.paperId}
       />
     </div>
+  )
+}
+
+// Loading component for Suspense fallback
+function AdminResearchPageLoading() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    </div>
+  )
+}
+
+export default function AdminResearchPage() {
+  return (
+    <Suspense fallback={<AdminResearchPageLoading />}>
+      <AdminResearchPageContent />
+    </Suspense>
   )
 }

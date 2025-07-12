@@ -31,6 +31,12 @@ if (!cachedClient) {
 }
 
 async function dbConnect() {
+  // Skip database connection during build time
+  if (process.env.NODE_ENV === 'production' && !process.env.MONGODB_URI) {
+    console.log('Skipping database connection during build time')
+    return null
+  }
+
   // If we already have a connection, return it
   if (cached.conn) {
     return cached.conn
@@ -120,10 +126,24 @@ async function getMongoClient(): Promise<MongoClient> {
 export default dbConnect
 
 // Export dbConnect as the primary connection method for Mongoose
-export const connectDB = dbConnect
+export const connectDB = async () => {
+  // Skip database connection during build time
+  if (process.env.NODE_ENV === 'production' && !process.env.MONGODB_URI) {
+    console.log('Skipping database connection during build time')
+    return null
+  }
+  return await dbConnect()
+}
 
 // Export getMongoClient for GridFS usage
-export const getMongoDBClient = getMongoClient
+export const getMongoDBClient = async () => {
+  // Skip database connection during build time
+  if (process.env.NODE_ENV === 'production' && !process.env.MONGODB_URI) {
+    console.log('Skipping MongoDB client connection during build time')
+    throw new Error('Database connection not available during build time')
+  }
+  return await getMongoClient()
+}
 
 // Export MongoClient for GridFS usage
 export { MongoClient }
