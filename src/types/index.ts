@@ -251,6 +251,7 @@ export interface ProjectFile {
 // Idea interface
 export interface Idea extends BaseDocument {
   title: string;
+  slug: string;
   description: string;
   field: AcademicField;
   tags: string[];
@@ -413,6 +414,8 @@ export enum AuditAction {
   IDEA_VIEW = 'idea_view',
   IDEA_VOTE = 'idea_vote',
   IDEA_COMMENT = 'idea_comment',
+  IDEA_COMMENT_UPDATE = 'idea_comment_update',
+  IDEA_COMMENT_DELETE = 'idea_comment_delete',
   
   // Degrees
   DEGREE_CREATE = 'degree_create',

@@ -1,9 +1,26 @@
-import dbConnect from '@/lib/db/mongodb'
+import { connectDB } from '@/lib/db/mongodb'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET() {
   try {
-    await dbConnect()
+    // Check if we're in build time
+    if (process.env.NODE_ENV === 'production' && !process.env.MONGODB_URI) {
+      return NextResponse.json({
+        success: false,
+        message: 'Database connection not available during build time',
+        timestamp: new Date().toISOString()
+      })
+    }
+
+    const connection = await connectDB()
+    
+    if (!connection) {
+      return NextResponse.json({
+        success: false,
+        message: 'Database connection skipped during build time',
+        timestamp: new Date().toISOString()
+      })
+    }
     
     return NextResponse.json({
       success: true,
